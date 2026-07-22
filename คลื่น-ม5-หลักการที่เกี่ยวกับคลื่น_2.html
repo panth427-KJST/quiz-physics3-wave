@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ฟิสิกส์ ม.5 — หลักการที่เกี่ยวกับคลื่น</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#0B1F3A;        /* น้ำลึก */
+    --ocean:#123A63;       /* คลื่นทะเลกลางคืน */
+    --wave:#1E6091;        /* คลื่นน้ำเงิน */
+    --crest:#3BA3C7;       /* ยอดคลื่น */
+    --foam:#7FD8E8;        /* ฟองคลื่น */
+    --sun:#F4B740;         /* แสงทอง */
+    --coral:#E8654A;       /* ปะการัง/เน้น */
+    --ink:#0A1626;
+    --paper:#F3F7FA;
+    --mist:#D4E4EE;
+    --ok:#12B886;
+    --bad:#E8654A;
+    --topbar-h:64px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;background:var(--deep);font-family:'Sarabun',sans-serif;}
+
+  /* เวทีหลัก 16:9 */
+  #stage{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(120% 120% at 50% 0%, #12335c 0%, #0B1F3A 55%, #071429 100%);
+  }
+  #deck{
+    position:relative;width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;
+    background:var(--paper);overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5);
+    border-radius:6px;
+  }
+
+  /* แต่ละสไลด์ */
+  .slide{
+    position:absolute;inset:0;display:none;flex-direction:column;
+    padding:3.2vh 4vw 8vh;opacity:0;transition:opacity .4s ease;
+  }
+  .slide.active{display:flex;opacity:1;}
+
+  /* แถบหัวสไลด์ */
+  .eyebrow{
+    font-family:'Kanit',sans-serif;font-weight:600;letter-spacing:.18em;
+    font-size:1.55vh;color:var(--wave);text-transform:uppercase;display:flex;align-items:center;gap:.7em;
+  }
+  .eyebrow::before{content:"";width:2.4vh;height:2.4vh;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,var(--foam),var(--wave));flex:none;}
+  h1.title{font-family:'Prompt',sans-serif;font-weight:800;color:var(--deep);
+    font-size:4.6vh;line-height:1.05;margin:.6vh 0 1.4vh;}
+  h2.sub{font-family:'Prompt',sans-serif;font-weight:700;color:var(--ocean);font-size:3.4vh;margin-bottom:1vh;}
+  p.lead{font-size:2.05vh;color:#2c4257;line-height:1.5;max-width:62ch;}
+
+  .divider{height:.4vh;width:9vh;border-radius:2px;
+    background:linear-gradient(90deg,var(--sun),var(--coral));margin:.8vh 0 1.6vh;}
+
+  /* กริดเนื้อหา */
+  .cols{display:flex;gap:3vw;flex:1;min-height:0;}
+  .col{flex:1;display:flex;flex-direction:column;min-height:0;}
+
+  /* การ์ดสรุป */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:1.6vh;margin-top:1vh;}
+  .card{background:#fff;border-radius:12px;padding:1.8vh 1.9vw;border:1px solid var(--mist);
+    box-shadow:0 4px 14px rgba(18,58,99,.06);position:relative;overflow:hidden;}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--wave);}
+  .card.c2::before{background:var(--crest);}
+  .card.c3::before{background:var(--sun);}
+  .card.c4::before{background:var(--coral);}
+  .card h3{font-family:'Kanit';font-weight:600;color:var(--deep);font-size:2.15vh;margin-bottom:.5vh;display:flex;align-items:center;gap:.5em;}
+  .card p{font-size:1.7vh;color:#40566a;line-height:1.42;}
+  .card .fx{font-family:'Kanit';color:var(--wave);font-weight:600;}
+
+  /* เวทีจำลอง canvas */
+  .sim{background:linear-gradient(180deg,#0B2340,#071528);border-radius:14px;
+    flex:1;position:relative;overflow:hidden;box-shadow:inset 0 2px 30px rgba(0,0,0,.4);min-height:0;}
+  .sim canvas{display:block;width:100%;height:100%;}
+  .sim-label{position:absolute;top:1.4vh;left:1.6vw;font-family:'Kanit';font-weight:600;
+    color:var(--foam);font-size:1.7vh;letter-spacing:.02em;z-index:3;
+    background:rgba(7,20,40,.55);padding:.4vh 1vw;border-radius:20px;backdrop-filter:blur(4px);}
+
+  /* แผงควบคุมจำลอง */
+  .panel{background:#fff;border-radius:12px;padding:1.6vh 1.6vw;border:1px solid var(--mist);
+    display:flex;flex-direction:column;gap:1.2vh;box-shadow:0 4px 14px rgba(18,58,99,.06);}
+  .ctrl{display:flex;flex-direction:column;gap:.5vh;}
+  .ctrl label{font-family:'Kanit';font-weight:500;color:var(--ocean);font-size:1.7vh;display:flex;justify-content:space-between;}
+  .ctrl label .val{color:var(--coral);font-weight:600;font-family:'Prompt';}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;
+    background:linear-gradient(90deg,var(--crest),var(--wave));outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+    background:#fff;border:3px solid var(--wave);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25);}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--wave);cursor:pointer;}
+  .toggle-row{display:flex;gap:.7vw;flex-wrap:wrap;}
+  .chip{font-family:'Kanit';font-weight:500;font-size:1.6vh;padding:.6vh 1.1vw;border-radius:20px;
+    border:2px solid var(--mist);color:var(--ocean);background:#fff;cursor:pointer;transition:.2s;}
+  .chip.on{background:var(--wave);color:#fff;border-color:var(--wave);}
+  .readout{display:flex;gap:1vw;flex-wrap:wrap;margin-top:.4vh;}
+  .stat{background:var(--paper);border-radius:10px;padding:.8vh 1.1vw;flex:1;min-width:0;text-align:center;}
+  .stat .n{font-family:'Prompt';font-weight:700;color:var(--wave);font-size:2.3vh;line-height:1;}
+  .stat .l{font-family:'Kanit';font-size:1.35vh;color:#6b8196;margin-top:.3vh;}
+
+  /* หน้าปก */
+  #cover{padding:0;justify-content:center;align-items:center;text-align:center;background:none;}
+  #coverCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;}
+  .cover-inner{position:relative;z-index:2;padding:0 6vw;}
+  .cover-inner .badge{display:inline-block;font-family:'Kanit';font-weight:600;letter-spacing:.2em;
+    font-size:1.8vh;color:var(--foam);border:1.5px solid rgba(127,216,232,.5);padding:.7vh 2vw;border-radius:30px;
+    text-transform:uppercase;margin-bottom:2.4vh;background:rgba(7,20,40,.3);backdrop-filter:blur(3px);}
+  .cover-inner h1{font-family:'Prompt';font-weight:800;color:#fff;font-size:7vh;line-height:1.02;
+    text-shadow:0 6px 30px rgba(0,0,0,.5);}
+  .cover-inner .accent{background:linear-gradient(90deg,var(--sun),var(--foam));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .cover-inner .meta{font-family:'Kanit';color:var(--mist);font-size:2.3vh;margin-top:2.6vh;font-weight:400;}
+  .cover-inner .teacher{font-family:'Kanit';color:var(--foam);font-size:1.9vh;margin-top:1vh;}
+
+  /* ---- QUIZ ---- */
+  #quizWrap{flex:1;display:flex;flex-direction:column;min-height:0;}
+  .q-progress{display:flex;gap:.5vw;margin:.6vh 0 1.4vh;}
+  .q-dot{flex:1;height:.7vh;border-radius:4px;background:var(--mist);transition:.3s;}
+  .q-dot.done{background:var(--crest);}
+  .q-dot.cur{background:var(--sun);}
+  .q-card{background:#fff;border-radius:16px;padding:2.6vh 3vw;border:1px solid var(--mist);
+    flex:1;display:flex;flex-direction:column;box-shadow:0 6px 20px rgba(18,58,99,.08);min-height:0;}
+  .q-num{font-family:'Kanit';font-weight:600;color:var(--coral);font-size:1.7vh;letter-spacing:.05em;}
+  .q-text{font-family:'Prompt';font-weight:600;color:var(--deep);font-size:2.8vh;line-height:1.35;margin:.8vh 0 1.8vh;}
+  .q-opts{display:grid;grid-template-columns:1fr 1fr;gap:1.3vh 1.6vw;flex:1;align-content:start;}
+  .opt{display:flex;align-items:center;gap:1vw;background:var(--paper);border:2px solid var(--mist);
+    border-radius:12px;padding:1.4vh 1.4vw;cursor:pointer;transition:.18s;font-size:2vh;color:#2c4257;font-family:'Sarabun';}
+  .opt:hover{border-color:var(--crest);transform:translateY(-2px);}
+  .opt .k{font-family:'Prompt';font-weight:700;color:var(--wave);background:#fff;border:2px solid var(--mist);
+    width:3.6vh;height:3.6vh;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;font-size:1.9vh;}
+  .opt.correct{background:rgba(18,184,134,.12);border-color:var(--ok);}
+  .opt.correct .k{background:var(--ok);color:#fff;border-color:var(--ok);}
+  .opt.wrong{background:rgba(232,101,74,.1);border-color:var(--bad);}
+  .opt.wrong .k{background:var(--bad);color:#fff;border-color:var(--bad);}
+  .q-explain{margin-top:1.4vh;background:linear-gradient(180deg,#EAF4FA,#F3F7FA);border-radius:12px;
+    padding:1.6vh 1.8vw;border-left:5px solid var(--sun);display:none;}
+  .q-explain.show{display:block;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .q-explain .h{font-family:'Kanit';font-weight:600;color:var(--sun);font-size:1.7vh;margin-bottom:.4vh;filter:brightness(.85);}
+  .q-explain p{font-size:1.85vh;color:#40566a;line-height:1.45;}
+  .q-actions{display:flex;gap:1vw;margin-top:1.6vh;align-items:center;}
+  .btn{font-family:'Kanit';font-weight:600;font-size:1.9vh;padding:1.1vh 2.4vw;border-radius:30px;border:none;
+    cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:.5em;}
+  .btn-reveal{background:var(--sun);color:#3a2a00;}
+  .btn-reveal:hover{filter:brightness(1.06);transform:translateY(-2px);}
+  .btn-next{background:var(--wave);color:#fff;}
+  .btn-next:hover{background:var(--ocean);transform:translateY(-2px);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+  .q-score{margin-left:auto;font-family:'Prompt';font-weight:700;color:var(--wave);font-size:2vh;}
+
+  /* หน้าสรุปผล quiz */
+  #result{align-items:center;justify-content:center;text-align:center;}
+  #result .big{font-family:'Prompt';font-weight:800;font-size:11vh;line-height:1;
+    background:linear-gradient(120deg,var(--wave),var(--crest),var(--sun));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  #result .msg{font-family:'Kanit';font-weight:600;color:var(--deep);font-size:3vh;margin:1vh 0;}
+  #result .sm{font-size:2.1vh;color:#5a7085;}
+
+  /* Navigation */
+  #nav{position:absolute;bottom:0;left:0;right:0;height:var(--topbar-h);display:flex;align-items:center;
+    justify-content:space-between;padding:0 3vw;background:linear-gradient(180deg,rgba(243,247,250,0),#fff 40%);z-index:20;}
+  .nav-btn{width:5vh;height:5vh;border-radius:50%;border:2px solid var(--mist);background:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;color:var(--wave);transition:.2s;}
+  .nav-btn:hover{background:var(--wave);color:#fff;border-color:var(--wave);}
+  .nav-btn:disabled{opacity:.3;cursor:not-allowed;}
+  .nav-btn svg{width:2.4vh;height:2.4vh;}
+  #dots{display:flex;gap:.9vw;align-items:center;}
+  .dot{width:1.1vh;height:1.1vh;border-radius:50%;background:var(--mist);cursor:pointer;transition:.2s;}
+  .dot.active{background:var(--wave);width:3vh;border-radius:4px;}
+  .page-tag{font-family:'Kanit';font-weight:500;color:#8299ac;font-size:1.6vh;}
+
+  /* ปุ่มเต็มหน้าจอ */
+  #fsBtn{position:fixed;top:14px;right:14px;z-index:50;background:rgba(11,31,58,.7);color:#fff;border:none;
+    border-radius:10px;padding:8px 14px;font-family:'Kanit';font-weight:500;font-size:14px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;backdrop-filter:blur(6px);transition:.2s;}
+  #fsBtn:hover{background:rgba(30,96,145,.9);}
+  #fsBtn svg{width:16px;height:16px;}
+
+  .hint{font-family:'Kanit';font-size:1.5vh;color:#8299ac;margin-top:.8vh;display:flex;align-items:center;gap:.5em;}
+</style>
+</head>
+<body>
+<button id="fsBtn" onclick="toggleFS()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+  <span id="fsLabel">เต็มจอ</span>
+</button>
+
+<div id="stage">
+<div id="deck">
+
+  <!-- 0: ปก -->
+  <section class="slide active" id="cover">
+    <canvas id="coverCanvas"></canvas>
+    <div class="cover-inner">
+      <span class="badge">ฟิสิกส์ 3 · ชั้นมัธยมศึกษาปีที่ 5</span>
+      <h1>บทที่ว่าด้วย<span class="accent"> คลื่น</span><br>หลักการที่เกี่ยวกับคลื่น</h1>
+      <div class="meta">การรบกวนที่เดินทาง — ถ่ายทอดพลังงานโดยไม่พาตัวกลางไปด้วย</div>
+      <div class="teacher">โรงเรียนกาญจนาภิเษกวิทยาลัย สุราษฎร์ธานี</div>
+    </div>
+  </section>
+
+  <!-- 1: คลื่นคืออะไร + สรุปสาระ -->
+  <section class="slide" id="s1">
+    <div class="eyebrow">แนวคิดหลัก · Core idea</div>
+    <h1 class="title">คลื่นคืออะไร และเกิดขึ้นได้อย่างไร</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col">
+        <p class="lead"><b>คลื่น (wave)</b> คือการถ่ายโอน <b>พลังงาน</b> และ <b>โมเมนตัม</b> จากที่หนึ่งไปยังอีกที่หนึ่ง โดยที่ตัวกลางเพียงแค่ <b>สั่นอยู่กับที่</b> ไม่ได้เคลื่อนที่ตามคลื่นไปด้วย</p>
+        <div class="cards">
+          <div class="card c1"><h3>🌊 คลื่นกล</h3><p>ต้องอาศัยตัวกลาง เช่น เสียง คลื่นน้ำ คลื่นในเส้นเชือก</p></div>
+          <div class="card c2"><h3>💡 คลื่นแม่เหล็กไฟฟ้า</h3><p>เดินทางในสุญญากาศได้ เช่น แสง คลื่นวิทยุ ด้วยอัตราเร็ว <span class="fx">c ≈ 3×10⁸ m/s</span></p></div>
+          <div class="card c3"><h3>↔️ คลื่นตามขวาง</h3><p>ตัวกลางสั่น <b>ตั้งฉาก</b> กับทิศการเคลื่อนที่ เช่น คลื่นในเชือก</p></div>
+          <div class="card c4"><h3>⇄ คลื่นตามยาว</h3><p>ตัวกลางสั่น <b>ขนาน</b> กับทิศการเคลื่อนที่ เช่น คลื่นเสียง</p></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="sim">
+          <span class="sim-label">เปรียบเทียบ: คลื่นตามขวาง vs ตามยาว</span>
+          <canvas id="canvasType"></canvas>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.8vh;gap:1vw;">
+          <div class="hint" style="margin:0;">🔎 สังเกตทิศทางการสั่นของจุดสีทองเทียบกับทิศที่คลื่นเดินทาง (→)</div>
+          <button class="chip on" id="chTypePause" onclick="togglePause('type')">⏸ หยุด/เล่น</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2: ส่วนประกอบของคลื่น (interactive) -->
+  <section class="slide" id="s2">
+    <div class="eyebrow">องค์ประกอบ · Anatomy</div>
+    <h1 class="title">ส่วนประกอบและปริมาณของคลื่น</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col" style="flex:1.35">
+        <div class="sim">
+          <span class="sim-label">ปรับค่าแล้วดูรูปร่างคลื่นเปลี่ยนแปลง</span>
+          <canvas id="canvasAnatomy"></canvas>
+        </div>
+      </div>
+      <div class="col">
+        <div class="panel">
+          <div class="ctrl">
+            <label>แอมพลิจูด A <span class="val"><span id="vA">40</span> px</span></label>
+            <input type="range" id="rA" min="10" max="70" value="40">
+          </div>
+          <div class="ctrl">
+            <label>ความยาวคลื่น λ <span class="val"><span id="vL">160</span> px</span></label>
+            <input type="range" id="rL" min="70" max="320" value="160">
+          </div>
+          <div class="ctrl">
+            <label>ความถี่ f <span class="val"><span id="vF">1.0</span> Hz</span></label>
+            <input type="range" id="rF" min="2" max="30" value="10">
+          </div>
+          <div class="toggle-row">
+            <button class="chip on" id="chMark" onclick="toggleMark()">แสดง λ · A</button>
+            <button class="chip on" id="chPause" onclick="togglePause('anat')">⏸ หยุด/เล่น</button>
+          </div>
+          <div class="readout">
+            <div class="stat"><div class="n" id="oT">1.00</div><div class="l">คาบ T (s)</div></div>
+            <div class="stat"><div class="n" id="oV">160</div><div class="l">อัตราเร็ว v = fλ</div></div>
+          </div>
+          <p style="font-size:1.6vh;color:#5a7085;line-height:1.4;">
+            <b>ยอดคลื่น</b> = จุดสูงสุด · <b>ท้องคลื่น</b> = จุดต่ำสุด · ความสัมพันธ์หลัก:
+            <b style="color:var(--wave)">v = f λ = λ / T</b>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3: สมบัติของคลื่น (interference) -->
+  <section class="slide" id="s3">
+    <div class="eyebrow">สมบัติ · Wave behaviour</div>
+    <h1 class="title">การซ้อนทับและการแทรกสอด</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col" style="flex:1.35">
+        <div class="sim">
+          <span class="sim-label">คลื่นสองขบวนซ้อนทับกัน (Superposition)</span>
+          <canvas id="canvasSuper"></canvas>
+        </div>
+      </div>
+      <div class="col">
+        <div class="panel">
+          <div class="ctrl">
+            <label>เฟสต่างกัน Δφ <span class="val"><span id="vPh">0</span>°</span></label>
+            <input type="range" id="rPh" min="0" max="360" value="0">
+          </div>
+          <div class="toggle-row">
+            <button class="chip on" id="cW1" onclick="tw(1)">คลื่น 1</button>
+            <button class="chip on" id="cW2" onclick="tw(2)">คลื่น 2</button>
+            <button class="chip on" id="cSum" onclick="tw(3)">ผลรวม</button>
+            <button class="chip on" id="cSuperPause" onclick="togglePause('super')">⏸ หยุด/เล่น</button>
+          </div>
+          <div class="cards" style="grid-template-columns:1fr;margin-top:.4vh;">
+            <div class="card c1"><h3>➕ เสริมกัน</h3><p>เมื่อเฟสตรงกัน (Δφ=0°) ยอดพบยอด → แอมพลิจูดรวมมากที่สุด</p></div>
+            <div class="card c4"><h3>➖ หักล้างกัน</h3><p>เมื่อเฟสตรงข้าม (Δφ=180°) ยอดพบท้อง → หักล้างเป็นศูนย์</p></div>
+          </div>
+          <p style="font-size:1.55vh;color:#5a7085;line-height:1.4;">
+            <b>หลักการซ้อนทับ:</b> การกระจัดรวม = ผลบวกการกระจัดของแต่ละคลื่น ณ จุดและเวลาเดียวกัน
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4: สรุปสาระสำคัญ -->
+  <section class="slide" id="s4">
+    <div class="eyebrow">สรุป · Key takeaways</div>
+    <h1 class="title">สรุปสาระสำคัญ — หลักการที่เกี่ยวกับคลื่น</h1>
+    <div class="divider"></div>
+    <div class="cards" style="grid-template-columns:1fr 1fr;gap:2vh;flex:1;align-content:center;">
+      <div class="card c1"><h3>1 · นิยาม</h3><p>คลื่นถ่ายโอน <b>พลังงาน</b> โดยตัวกลางสั่นอยู่กับที่ ไม่เคลื่อนที่ตามคลื่น</p></div>
+      <div class="card c2"><h3>2 · ชนิด</h3><p>แบ่งตามตัวกลาง (คลื่นกล/แม่เหล็กไฟฟ้า) และตามทิศการสั่น (ตามขวาง/ตามยาว)</p></div>
+      <div class="card c3"><h3>3 · ปริมาณ</h3><p>A, λ, f, T และความเร็ว <b class="fx">v = fλ = λ/T</b> เป็นหัวใจของการคำนวณ</p></div>
+      <div class="card c4"><h3>4 · สมบัติ</h3><p>สะท้อน · หักเห · แทรกสอด · เลี้ยวเบน โดยยึด <b>หลักการซ้อนทับ</b></p></div>
+    </div>
+    <p class="lead" style="text-align:center;margin:1.2vh auto 0;">✨ พร้อมทดสอบความเข้าใจกันหรือยัง? กดถัดไปเพื่อเริ่ม <b>Quiz 10 ข้อ</b></p>
+  </section>
+
+  <!-- 5: QUIZ -->
+  <section class="slide" id="s5">
+    <div class="eyebrow">ทดสอบความเข้าใจ · Quiz</div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+      <h1 class="title" style="margin-bottom:0;">คำถามทบทวน 10 ข้อ</h1>
+    </div>
+    <div class="q-progress" id="qProg"></div>
+    <div id="quizWrap">
+      <div class="q-card">
+        <div class="q-num" id="qNum">ข้อ 1 / 10</div>
+        <div class="q-text" id="qText"></div>
+        <div class="q-opts" id="qOpts"></div>
+        <div class="q-explain" id="qExp">
+          <div class="h">💡 เฉลยและคำอธิบาย</div>
+          <p id="qExpText"></p>
+        </div>
+        <div class="q-actions">
+          <button class="btn btn-reveal" id="btnReveal" onclick="reveal()">👁 ดูเฉลย</button>
+          <button class="btn btn-next" id="btnNext" onclick="nextQ()" disabled>ข้อถัดไป →</button>
+          <span class="q-score" id="qScore">คะแนน 0 / 0</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6: ผลลัพธ์ -->
+  <section class="slide" id="s6">
+    <div id="result">
+      <div class="eyebrow" style="justify-content:center;">สรุปผล · Result</div>
+      <div class="big" id="rBig">0/10</div>
+      <div class="msg" id="rMsg"></div>
+      <div class="sm" id="rSm"></div>
+      <button class="btn btn-next" style="margin-top:2.4vh;" onclick="restartQuiz()">↺ ทำแบบทดสอบใหม่</button>
+    </div>
+  </section>
+
+  <!-- NAV -->
+  <div id="nav">
+    <button class="nav-btn" id="prevB" onclick="go(-1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div id="dots"></div>
+    <div style="display:flex;align-items:center;gap:1.4vw;">
+      <span class="page-tag" id="pageTag">1 / 7</span>
+      <button class="nav-btn" id="nextB" onclick="go(1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+/* ============ NAVIGATION ============ */
+// สถานะหยุด/เล่นของแต่ละแบบจำลอง (ประกาศบนสุดเพื่อให้ทุกลูปเข้าถึงได้)
+const paused={type:false,anat:false,super:false};
+const slides=[...document.querySelectorAll('.slide')];
+const N=slides.length;let cur=0;
+const dots=document.getElementById('dots');
+slides.forEach((_,i)=>{const d=document.createElement('div');d.className='dot'+(i===0?' active':'');
+  d.onclick=()=>jump(i);dots.appendChild(d);});
+function render(){
+  slides.forEach((s,i)=>s.classList.toggle('active',i===cur));
+  [...dots.children].forEach((d,i)=>d.classList.toggle('active',i===cur));
+  document.getElementById('pageTag').textContent=`${cur+1} / ${N}`;
+  document.getElementById('prevB').disabled=cur===0;
+  document.getElementById('nextB').disabled=cur===N-1;
+}
+function go(d){cur=Math.max(0,Math.min(N-1,cur+d));render();}
+function jump(i){cur=i;render();}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' ')go(1);
+  if(e.key==='ArrowLeft')go(-1);
+  if(e.key==='f'||e.key==='F')toggleFS();
+});
+render();
+
+/* ============ FULLSCREEN ============ */
+function toggleFS(){
+  if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}
+  else{document.exitFullscreen&&document.exitFullscreen();}
+}
+document.addEventListener('fullscreenchange',()=>{
+  document.getElementById('fsLabel').textContent=document.fullscreenElement?'ออกจากเต็มจอ':'เต็มจอ';
+});
+
+/* ============ HELPERS ============ */
+function fit(cv){const r=cv.getBoundingClientRect();const dpr=window.devicePixelRatio||1;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+  return{ctx,w:r.width,h:r.height};}
+
+/* ============ COVER animation ============ */
+(function(){const cv=document.getElementById('coverCanvas');let a;
+  function draw(t){const{ctx,w,h}=fit(cv);ctx.clearRect(0,0,w,h);
+    for(let L=0;L<5;L++){
+      const amp=18+L*10, yBase=h*0.55+L*h*0.09, wl=140+L*40, sp=0.0006*(1+L*0.3);
+      ctx.beginPath();ctx.moveTo(0,h);
+      for(let x=0;x<=w;x+=6){const y=yBase+Math.sin(x/wl*Math.PI*2+t*sp+L)*amp;ctx.lineTo(x,y);}
+      ctx.lineTo(w,h);ctx.closePath();
+      const g=ctx.createLinearGradient(0,yBase-amp,0,h);
+      const cols=['rgba(59,163,199,',' rgba(30,96,145,','rgba(18,58,99,','rgba(11,35,64,','rgba(7,20,40,'];
+      g.addColorStop(0,cols[L]+(0.5-L*0.07)+')');g.addColorStop(1,cols[L]+'0.85)');
+      ctx.fillStyle=g;ctx.fill();
+    }
+    a=requestAnimationFrame(draw);}
+  draw(0);window.addEventListener('resize',()=>{});
+})();
+
+/* ============ SLIDE 1: transverse vs longitudinal ============ */
+(function(){const cv=document.getElementById('canvasType');let t=0;
+  function draw(){const{ctx,w,h}=fit(cv);ctx.clearRect(0,0,w,h);if(!paused.type)t+=0.03;
+    // transverse (top half)
+    const midT=h*0.27, midL=h*0.72;
+    ctx.strokeStyle='rgba(127,216,232,.25)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,midT);ctx.lineTo(w,midT);ctx.stroke();
+    // transverse points
+    ctx.fillStyle='#F4B740';
+    const nT=14;
+    for(let i=0;i<nT;i++){const x=(i+1)/(nT+1)*w;const y=midT+Math.sin(i*0.7 - t*2)*h*0.11;
+      ctx.beginPath();ctx.arc(x,y,4.5,0,7);ctx.fill();}
+    // transverse wave line
+    ctx.strokeStyle='#3BA3C7';ctx.lineWidth=2.5;ctx.beginPath();
+    for(let x=0;x<=w;x+=4){const ph=x/w*(nT+1)*0.7;const y=midT+Math.sin(ph-t*2)*h*0.11;x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+    ctx.stroke();
+    ctx.fillStyle='#7FD8E8';ctx.font='600 '+(h*0.06)+"px Kanit";ctx.fillText('คลื่นตามขวาง (สั่น ↕ / เดินทาง →)',12,h*0.10);
+    // arrow direction transverse
+    // longitudinal (bottom half) — compression pattern
+    const nL=40;
+    for(let i=0;i<nL;i++){
+      const base=(i+0.5)/nL*w;
+      const disp=Math.sin(i/nL*Math.PI*2*3 - t*2)*10;
+      const x=base+disp;
+      const dens=Math.abs(Math.cos(i/nL*Math.PI*2*3 - t*2));
+      ctx.fillStyle=`rgba(244,183,64,${0.35+dens*0.6})`;
+      ctx.beginPath();ctx.arc(x,midL,3.4,0,7);ctx.fill();
+    }
+    ctx.fillStyle='#7FD8E8';ctx.font='600 '+(h*0.06)+"px Kanit";ctx.fillText('คลื่นตามยาว (สั่น ↔ / เดินทาง →) — สังเกตส่วนอัด/ขยาย',12,h*0.56);
+    // travel arrow
+    ctx.strokeStyle='#E8654A';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(w-90,h*0.44);ctx.lineTo(w-20,h*0.44);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(w-30,h*0.42);ctx.lineTo(w-20,h*0.44);ctx.lineTo(w-30,h*0.46);ctx.stroke();
+    requestAnimationFrame(draw);}
+  draw();
+})();
+
+/* ============ SLIDE 2: anatomy interactive ============ */
+const anat={A:40,L:160,f:1.0,mark:true,t:0};
+function updAnat(){
+  anat.A=+rA.value;anat.L=+rL.value;anat.f=(+rF.value)/10;
+  vA.textContent=anat.A;vL.textContent=anat.L;vF.textContent=anat.f.toFixed(1);
+  oT.textContent=(1/anat.f).toFixed(2);oV.textContent=Math.round(anat.f*anat.L);
+}
+['rA','rL','rF'].forEach(id=>document.getElementById(id).addEventListener('input',updAnat));
+function toggleMark(){anat.mark=!anat.mark;chMark.classList.toggle('on',anat.mark);}
+function togglePause(w){
+  paused[w]=!paused[w];
+  const btn={type:'chTypePause',anat:'chPause',super:'cSuperPause'}[w];
+  document.getElementById(btn).classList.toggle('on',!paused[w]);
+  document.getElementById(btn).textContent=paused[w]?'▶ เล่นต่อ':'⏸ หยุด/เล่น';
+}
+(function(){const cv=document.getElementById('canvasAnatomy');
+  function draw(){const{ctx,w,h}=fit(cv);ctx.clearRect(0,0,w,h);
+    if(!paused.anat)anat.t+=anat.f*0.04;
+    const mid=h/2;
+    ctx.strokeStyle='rgba(127,216,232,.2)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(w,mid);ctx.stroke();
+    // wave
+    ctx.strokeStyle='#3BA3C7';ctx.lineWidth=3;ctx.beginPath();
+    for(let x=0;x<=w;x+=3){const y=mid-Math.sin((x/anat.L - anat.t)*Math.PI*2)*anat.A;x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+    ctx.stroke();
+    // glow fill
+    ctx.lineTo(w,mid);ctx.lineTo(0,mid);ctx.closePath();
+    ctx.fillStyle='rgba(59,163,199,.12)';ctx.fill();
+    if(anat.mark){
+      ctx.setLineDash([5,5]);ctx.strokeStyle='#F4B740';ctx.lineWidth=1.5;
+      // amplitude marker at first crest
+      let cx=0;for(let x=0;x<w;x++){if(Math.sin((x/anat.L - anat.t)*Math.PI*2)>0.999){cx=x;break;}}
+      ctx.beginPath();ctx.moveTo(cx,mid);ctx.lineTo(cx,mid-anat.A);ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#F4B740';ctx.font='600 '+Math.max(12,h*0.06)+"px Kanit";
+      ctx.fillText('A',cx+8,mid-anat.A/2);
+      // wavelength marker between two crests
+      const x1=cx, x2=cx+anat.L;
+      if(x2<w){ctx.strokeStyle='#E8654A';ctx.setLineDash([5,5]);
+        ctx.beginPath();ctx.moveTo(x1,mid+anat.A+16);ctx.lineTo(x2,mid+anat.A+16);ctx.stroke();ctx.setLineDash([]);
+        ctx.beginPath();ctx.moveTo(x1,mid+anat.A+10);ctx.lineTo(x1,mid+anat.A+22);
+        ctx.moveTo(x2,mid+anat.A+10);ctx.lineTo(x2,mid+anat.A+22);ctx.stroke();
+        ctx.fillStyle='#E8654A';ctx.fillText('λ',(x1+x2)/2-6,mid+anat.A+34);}
+      // crest & trough labels
+      ctx.fillStyle='#7FD8E8';ctx.font='500 '+Math.max(11,h*0.05)+"px Kanit";
+      ctx.fillText('ยอดคลื่น',cx-18,mid-anat.A-8);
+    }
+    requestAnimationFrame(draw);}
+  draw();updAnat();
+})();
+
+/* ============ SLIDE 3: superposition ============ */
+const sup={ph:0,show:[true,true,true]};
+document.getElementById('rPh').addEventListener('input',e=>{sup.ph=+e.target.value;vPh.textContent=sup.ph;});
+function tw(n){sup.show[n-1]=!sup.show[n-1];
+  document.getElementById(['cW1','cW2','cSum'][n-1]).classList.toggle('on',sup.show[n-1]);}
+(function(){const cv=document.getElementById('canvasSuper');let t=0;
+  function draw(){const{ctx,w,h}=fit(cv);ctx.clearRect(0,0,w,h);if(!paused.super)t+=0.03;
+    const mid=h/2,A=h*0.16,wl=w/3.2,phr=sup.ph*Math.PI/180;
+    ctx.strokeStyle='rgba(127,216,232,.18)';ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(w,mid);ctx.stroke();
+    function wave(fn,col,lw){ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.beginPath();
+      for(let x=0;x<=w;x+=3){const y=mid-fn(x);x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();}
+    const w1=x=>Math.sin(x/wl*Math.PI*2 - t*2)*A;
+    const w2=x=>Math.sin(x/wl*Math.PI*2 - t*2 + phr)*A;
+    if(sup.show[0])wave(w1,'rgba(59,163,199,.65)',2);
+    if(sup.show[1])wave(w2,'rgba(244,183,64,.8)',2);
+    if(sup.show[2])wave(x=>w1(x)+w2(x),'#E8654A',3.5);
+    // legend
+    ctx.font='500 '+Math.max(11,h*0.05)+"px Kanit";
+    ctx.fillStyle='rgba(59,163,199,.9)';ctx.fillText('■ คลื่น 1',12,h-40);
+    ctx.fillStyle='rgba(244,183,64,.95)';ctx.fillText('■ คลื่น 2',100,h-40);
+    ctx.fillStyle='#E8654A';ctx.fillText('■ ผลรวม (ซ้อนทับ)',185,h-40);
+    requestAnimationFrame(draw);}
+  draw();
+})();
+
+/* ============ QUIZ DATA ============ */
+const QUIZ=[
+ {q:'ข้อใดคือความหมายที่ถูกต้องที่สุดของ "คลื่น"',
+  o:['การเคลื่อนที่ของตัวกลางจากที่หนึ่งไปอีกที่หนึ่ง','การถ่ายโอนพลังงานโดยตัวกลางสั่นอยู่กับที่','การเคลื่อนที่ของอนุภาคเป็นเส้นตรงด้วยความเร็วคงที่','การสั่นของวัตถุที่ไม่มีการถ่ายโอนพลังงาน'],
+  a:1,e:'คลื่นคือการถ่ายโอนพลังงาน (และโมเมนตัม) โดยที่ตัวกลางเพียงสั่นอยู่กับที่ ไม่ได้เคลื่อนที่ตามคลื่นไปด้วย'},
+ {q:'คลื่นชนิดใดที่สามารถเดินทางผ่านสุญญากาศได้',
+  o:['คลื่นเสียง','คลื่นในเส้นเชือก','คลื่นแม่เหล็กไฟฟ้า','คลื่นน้ำ'],
+  a:2,e:'คลื่นแม่เหล็กไฟฟ้า เช่น แสง คลื่นวิทยุ ไม่ต้องอาศัยตัวกลาง จึงเดินทางในสุญญากาศได้ด้วยอัตราเร็ว c ≈ 3×10⁸ m/s'},
+ {q:'คลื่นเสียงจัดเป็นคลื่นชนิดใดตามทิศการสั่นของตัวกลาง',
+  o:['คลื่นตามขวาง','คลื่นตามยาว','คลื่นแม่เหล็กไฟฟ้า','คลื่นผิวน้ำ'],
+  a:1,e:'คลื่นเสียงเป็นคลื่นตามยาว เพราะตัวกลาง (อากาศ) สั่นในทิศ "ขนาน" กับทิศการเคลื่อนที่ของคลื่น เกิดเป็นส่วนอัดและส่วนขยาย'},
+ {q:'ในคลื่นตามขวาง ทิศการสั่นของตัวกลางเป็นอย่างไรเทียบกับทิศการเคลื่อนที่',
+  o:['ขนานกัน','ตั้งฉากกัน','ทำมุม 45°','ไม่มีทิศแน่นอน'],
+  a:1,e:'คลื่นตามขวาง (เช่น คลื่นในเส้นเชือก) ตัวกลางสั่นในทิศ "ตั้งฉาก" กับทิศที่คลื่นเดินทาง'},
+ {q:'ระยะจากยอดคลื่นหนึ่งไปยังยอดคลื่นถัดไปเรียกว่าอะไร',
+  o:['แอมพลิจูด','ความยาวคลื่น','คาบ','ความถี่'],
+  a:1,e:'ความยาวคลื่น (λ) คือระยะระหว่างจุดสองจุดที่มีเฟสตรงกันติดกัน เช่น ยอดคลื่นถึงยอดคลื่นถัดไป'},
+ {q:'คลื่นหนึ่งมีความถี่ 50 Hz และความยาวคลื่น 4 m อัตราเร็วของคลื่นเท่ากับเท่าใด',
+  o:['12.5 m/s','54 m/s','200 m/s','0.08 m/s'],
+  a:2,e:'จาก v = f λ = 50 × 4 = 200 m/s'},
+ {q:'คาบ (T) ของคลื่นสัมพันธ์กับความถี่ (f) อย่างไร',
+  o:['T = f','T = 1/f','T = f²','T = 2f'],
+  a:1,e:'คาบคือเวลาที่ใช้ครบหนึ่งรอบ ส่วนความถี่คือจำนวนรอบต่อวินาที จึงเป็นส่วนกลับกัน: T = 1/f'},
+ {q:'เมื่อคลื่นสองขบวนที่เหมือนกันมีเฟสตรงกัน (Δφ = 0°) ซ้อนทับกัน ผลลัพธ์เป็นอย่างไร',
+  o:['หักล้างกันหมด','เสริมกัน แอมพลิจูดเพิ่มขึ้น','แอมพลิจูดคงเดิม','คลื่นหยุดนิ่ง'],
+  a:1,e:'เฟสตรงกัน (ยอดพบยอด ท้องพบท้อง) เกิดการแทรกสอดแบบเสริม แอมพลิจูดรวมมากที่สุด'},
+ {q:'"การกระจัดรวม ณ จุดหนึ่งเท่ากับผลบวกการกระจัดของแต่ละคลื่น" เป็นใจความของหลักการใด',
+  o:['หลักการของฮอยเกนส์','หลักการซ้อนทับ','กฎการสะท้อน','หลักความไม่แน่นอน'],
+  a:1,e:'นี่คือหลักการซ้อนทับ (Superposition principle) ซึ่งเป็นพื้นฐานของการแทรกสอดของคลื่น'},
+ {q:'ข้อใด "ไม่ใช่" สมบัติของคลื่น',
+  o:['การสะท้อน','การหักเห','การแทรกสอด','การเผาไหม้'],
+  a:3,e:'สมบัติของคลื่นได้แก่ การสะท้อน การหักเห การแทรกสอด และการเลี้ยวเบน ส่วน "การเผาไหม้" เป็นปฏิกิริยาเคมี ไม่ใช่สมบัติของคลื่น'}
+];
+let qi=0,score=0,answered=false;
+const qProg=document.getElementById('qProg');
+QUIZ.forEach(()=>{const d=document.createElement('div');d.className='q-dot';qProg.appendChild(d);});
+function loadQ(){
+  answered=false;const item=QUIZ[qi];
+  qNum.textContent=`ข้อ ${qi+1} / 10`;
+  qText.textContent=item.q;
+  qOpts.innerHTML='';
+  item.o.forEach((txt,idx)=>{
+    const el=document.createElement('div');el.className='opt';
+    el.innerHTML=`<span class="k">${String.fromCharCode(65+idx)}</span><span>${txt}</span>`;
+    el.onclick=()=>pick(idx,el);qOpts.appendChild(el);
+  });
+  qExp.classList.remove('show');qExpText.textContent=item.e;
+  btnNext.disabled=true;btnReveal.disabled=false;
+  qScore.textContent=`คะแนน ${score} / ${qi}`;
+  [...qProg.children].forEach((d,i)=>{d.className='q-dot'+(i<qi?' done':i===qi?' cur':'');});
+}
+function pick(idx,el){
+  if(answered)return;answered=true;
+  const item=QUIZ[qi];const opts=[...qOpts.children];
+  opts[item.a].classList.add('correct');
+  if(idx===item.a){score++;}
+  else{el.classList.add('wrong');}
+  qExp.classList.add('show');
+  btnNext.disabled=false;btnReveal.disabled=true;
+  qScore.textContent=`คะแนน ${score} / ${qi+1}`;
+}
+function reveal(){
+  if(answered)return;answered=true;
+  const item=QUIZ[qi];const opts=[...qOpts.children];
+  opts[item.a].classList.add('correct');
+  qExp.classList.add('show');
+  btnNext.disabled=false;btnReveal.disabled=true;
+  qScore.textContent=`คะแนน ${score} / ${qi+1}`;  // นับข้อนี้เป็นดูเฉลย = ไม่ได้คะแนน
+}
+function nextQ(){
+  if(qi<QUIZ.length-1){qi++;loadQ();}
+  else{showResult();}
+}
+function showResult(){
+  [...qProg.children].forEach(d=>d.className='q-dot done');
+  cur=6;render();
+  rBig.textContent=`${score}/10`;
+  let msg,sm;
+  const pct=score/10;
+  if(pct>=0.9){msg='ยอดเยี่ยมมาก! 🌊';sm='เข้าใจหลักการเรื่องคลื่นได้อย่างแม่นยำ';}
+  else if(pct>=0.7){msg='เก่งมาก! 👍';sm='เข้าใจภาพรวมได้ดี ลองทบทวนข้อที่พลาดอีกนิด';}
+  else if(pct>=0.5){msg='ผ่านเกณฑ์ 💪';sm='พื้นฐานใช้ได้ แนะนำทบทวนส่วนประกอบและสมการ v = fλ';}
+  else{msg='สู้ต่อไป! 📚';sm='ลองกลับไปดูแบบจำลองในสไลด์แล้วทำแบบทดสอบใหม่อีกครั้ง';}
+  rMsg.textContent=msg;rSm.textContent=sm;
+}
+function restartQuiz(){qi=0;score=0;answered=false;cur=5;render();loadQ();}
+loadQ();
+</script>
+</body>
+</html>
