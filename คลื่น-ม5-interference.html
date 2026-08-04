@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ฟิสิกส์ ม.5 — การแทรกสอดของคลื่น</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#0B1F3A;--ocean:#123A63;--wave:#1E6091;--crest:#3BA3C7;--foam:#7FD8E8;
+    --sun:#F4B740;--coral:#E8654A;--ink:#0A1626;--paper:#F3F7FA;--mist:#D4E4EE;
+    --ok:#12B886;--bad:#E8654A;--topbar-h:64px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;background:var(--deep);font-family:'Sarabun',sans-serif;}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(120% 120% at 50% 0%, #12335c 0%, #0B1F3A 55%, #071429 100%);}
+  #deck{position:relative;width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;
+    background:var(--paper);overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5);border-radius:6px;}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;padding:3.2vh 4vw 8vh;opacity:0;transition:opacity .4s ease;}
+  .slide.active{display:flex;opacity:1;}
+  .eyebrow{font-family:'Kanit',sans-serif;font-weight:600;letter-spacing:.18em;font-size:1.55vh;
+    color:var(--wave);text-transform:uppercase;display:flex;align-items:center;gap:.7em;}
+  .eyebrow::before{content:"";width:2.4vh;height:2.4vh;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,var(--foam),var(--wave));flex:none;}
+  h1.title{font-family:'Prompt',sans-serif;font-weight:800;color:var(--deep);font-size:4.6vh;line-height:1.05;margin:.6vh 0 1.4vh;}
+  h2.sub{font-family:'Prompt',sans-serif;font-weight:700;color:var(--ocean);font-size:3.4vh;margin-bottom:1vh;}
+  p.lead{font-size:2.05vh;color:#2c4257;line-height:1.5;max-width:64ch;}
+  .divider{height:.4vh;width:9vh;border-radius:2px;background:linear-gradient(90deg,var(--sun),var(--coral));margin:.8vh 0 1.6vh;}
+  .cols{display:flex;gap:3vw;flex:1;min-height:0;}
+  .col{flex:1;display:flex;flex-direction:column;min-height:0;}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:1.6vh;margin-top:1vh;}
+  .card{background:#fff;border-radius:12px;padding:1.6vh 1.7vw;border:1px solid var(--mist);
+    box-shadow:0 4px 14px rgba(18,58,99,.06);position:relative;overflow:hidden;}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--wave);}
+  .card.c2::before{background:var(--crest);}
+  .card.c3::before{background:var(--sun);}
+  .card.c4::before{background:var(--coral);}
+  .card h3{font-family:'Kanit';font-weight:600;color:var(--deep);font-size:2vh;margin-bottom:.5vh;display:flex;align-items:center;gap:.5em;}
+  .card p{font-size:1.62vh;color:#40566a;line-height:1.4;}
+  .card .fx{font-family:'Kanit';color:var(--wave);font-weight:600;}
+  .sim{background:linear-gradient(180deg,#0B2340,#071528);border-radius:14px;flex:1;position:relative;
+    overflow:hidden;box-shadow:inset 0 2px 30px rgba(0,0,0,.4);min-height:0;}
+  .sim canvas{display:block;width:100%;height:100%;}
+  .sim-label{position:absolute;top:1.4vh;left:1.6vw;font-family:'Kanit';font-weight:600;color:var(--foam);
+    font-size:1.6vh;letter-spacing:.02em;z-index:3;background:rgba(7,20,40,.55);padding:.4vh 1vw;border-radius:20px;backdrop-filter:blur(4px);}
+  .sim-legend{position:absolute;bottom:1.2vh;left:1.6vw;right:1.6vw;display:flex;gap:1.2vw;flex-wrap:wrap;z-index:3;}
+  .lg{display:flex;align-items:center;gap:.4em;font-family:'Kanit';font-size:1.4vh;color:#cfe6f2;
+    background:rgba(7,20,40,.5);padding:.3vh .8vw;border-radius:14px;}
+  .lg .sw{width:1.6vh;height:1.6vh;border-radius:3px;flex:none;}
+  .panel{background:#fff;border-radius:12px;padding:1.6vh 1.6vw;border:1px solid var(--mist);
+    display:flex;flex-direction:column;gap:1.1vh;box-shadow:0 4px 14px rgba(18,58,99,.06);}
+  .ctrl{display:flex;flex-direction:column;gap:.5vh;}
+  .ctrl label{font-family:'Kanit';font-weight:500;color:var(--ocean);font-size:1.65vh;display:flex;justify-content:space-between;}
+  .ctrl label .val{color:var(--coral);font-weight:600;font-family:'Prompt';}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;
+    background:linear-gradient(90deg,var(--crest),var(--wave));outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+    background:#fff;border:3px solid var(--wave);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25);}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--wave);cursor:pointer;}
+  .toggle-row{display:flex;gap:.7vw;flex-wrap:wrap;}
+  .chip{font-family:'Kanit';font-weight:500;font-size:1.55vh;padding:.6vh 1.1vw;border-radius:20px;
+    border:2px solid var(--mist);color:var(--ocean);background:#fff;cursor:pointer;transition:.2s;}
+  .chip.on{background:var(--wave);color:#fff;border-color:var(--wave);}
+  .readout{display:flex;gap:1vw;flex-wrap:wrap;margin-top:.4vh;}
+  .stat{background:var(--paper);border-radius:10px;padding:.8vh 1.1vw;flex:1;min-width:0;text-align:center;}
+  .stat .n{font-family:'Prompt';font-weight:700;color:var(--wave);font-size:2.2vh;line-height:1;}
+  .stat .l{font-family:'Kanit';font-size:1.3vh;color:#6b8196;margin-top:.3vh;}
+  .note-box{background:rgba(244,183,64,.12);border-left:4px solid var(--sun);border-radius:10px;
+    padding:1.1vh 1.3vw;font-size:1.62vh;color:#5a4a1a;line-height:1.45;margin-top:.6vh;}
+  .note-box b{color:#8a6400;}
+  .formula{background:linear-gradient(135deg,#0B2340,#123A63);border-radius:12px;padding:1.6vh 1.8vw;
+    color:#fff;font-family:'Prompt';margin:.8vh 0;box-shadow:0 6px 18px rgba(11,35,64,.3);}
+  .formula .eq{font-size:2.6vh;font-weight:600;letter-spacing:.02em;}
+  .formula .eq .hi{color:var(--sun);}
+  .formula .cap{font-family:'Kanit';font-size:1.55vh;color:var(--foam);margin-top:.5vh;font-weight:400;}
+  .two-formula{display:grid;grid-template-columns:1fr 1fr;gap:1.4vw;}
+  .pill-list{display:flex;flex-direction:column;gap:1vh;margin-top:.6vh;}
+  .pill-item{display:flex;gap:.9vw;align-items:flex-start;background:#fff;border:1px solid var(--mist);
+    border-radius:10px;padding:1vh 1.2vw;}
+  .pill-item .ico{width:3.4vh;height:3.4vh;border-radius:9px;flex:none;display:flex;align-items:center;
+    justify-content:center;font-size:1.9vh;color:#fff;}
+  .pill-item .tx{font-size:1.62vh;color:#40566a;line-height:1.4;}
+  .pill-item .tx b{color:var(--deep);font-family:'Kanit';}
+
+  /* หน้าปก */
+  #cover{padding:0;justify-content:center;align-items:center;text-align:center;background:none;}
+  #coverCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;}
+  .cover-inner{position:relative;z-index:2;padding:0 6vw;}
+  .cover-inner .badge{display:inline-block;font-family:'Kanit';font-weight:600;letter-spacing:.2em;font-size:1.8vh;
+    color:var(--foam);border:1.5px solid rgba(127,216,232,.5);padding:.7vh 2vw;border-radius:30px;
+    text-transform:uppercase;margin-bottom:2.4vh;background:rgba(7,20,40,.3);backdrop-filter:blur(3px);}
+  .cover-inner h1{font-family:'Prompt';font-weight:800;color:#fff;font-size:7vh;line-height:1.02;text-shadow:0 6px 30px rgba(0,0,0,.5);}
+  .cover-inner .accent{background:linear-gradient(90deg,var(--sun),var(--foam));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .cover-inner .meta{font-family:'Kanit';color:var(--mist);font-size:2.3vh;margin-top:2.6vh;font-weight:400;}
+  .cover-inner .teacher{font-family:'Kanit';color:var(--foam);font-size:1.9vh;margin-top:1vh;}
+
+  /* โจทย์ตัวอย่าง (แยกหน้าละข้อ) */
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .ex-head{display:flex;align-items:center;gap:1vw;margin-bottom:1.4vh;}
+  .ex-badge{font-family:'Prompt';font-weight:800;color:#fff;background:var(--coral);
+    width:6vh;height:6vh;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:2.6vh;flex:none;}
+  .ex-badge .sm{font-size:1.2vh;font-weight:500;}
+  .ex-kind{font-family:'Kanit';font-weight:600;font-size:1.7vh;padding:.5vh 1.4vw;border-radius:20px;}
+  .ex-kind.find{background:rgba(30,96,145,.12);color:var(--wave);}
+  .ex-body{display:flex;gap:3vw;flex:1;min-height:0;}
+  .ex-qside{flex:1;display:flex;flex-direction:column;}
+  .ex-question{font-family:'Prompt';font-weight:600;color:var(--deep);font-size:2.5vh;line-height:1.5;
+    background:#fff;border-radius:14px;padding:2.4vh 2.4vw;border:1px solid var(--mist);
+    border-left:6px solid var(--coral);box-shadow:0 4px 14px rgba(18,58,99,.06);}
+  .ex-given{margin-top:1.6vh;display:flex;flex-direction:column;gap:.8vh;}
+  .ex-given .g{display:flex;align-items:center;gap:.7vw;font-size:1.9vh;color:#40566a;font-family:'Sarabun';}
+  .ex-given .g .lb{font-family:'Prompt';font-weight:700;color:var(--wave);min-width:5.5vw;}
+  .ex-btn{font-family:'Kanit';font-weight:600;font-size:2vh;padding:1.3vh 3vw;border-radius:30px;border:none;
+    cursor:pointer;background:var(--sun);color:#3a2a00;margin-top:auto;align-self:flex-start;transition:.2s;}
+  .ex-btn:hover{filter:brightness(1.06);transform:translateY(-2px);}
+  .ex-answer{flex:1;background:linear-gradient(180deg,#0B2340,#071528);border-radius:16px;
+    padding:2.4vh 2.4vw;color:#fff;display:none;flex-direction:column;overflow-y:auto;}
+  .ex-answer.show{display:flex;animation:fade .35s ease;}
+  .ex-answer .ah{font-family:'Kanit';font-weight:600;color:var(--sun);font-size:1.9vh;margin-bottom:1.2vh;
+    display:flex;align-items:center;gap:.5em;}
+  .sol-step{margin-bottom:1.3vh;}
+  .sol-step .lbl{font-family:'Kanit';font-size:1.55vh;color:var(--foam);margin-bottom:.4vh;}
+  .sol-eq{font-family:'Prompt';font-size:2.3vh;color:#fff;line-height:1.7;letter-spacing:.01em;}
+  .sol-eq .op{color:var(--foam);margin:0 .2em;}
+  .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 .25em;line-height:1;}
+  .frac .nu{border-bottom:2px solid #fff;padding:0 .35em .1em;}
+  .frac .de{padding:.1em .35em 0;}
+  .sol-final{margin-top:auto;background:rgba(244,183,64,.18);border-radius:12px;padding:1.4vh 1.6vw;
+    border-left:5px solid var(--sun);}
+  .sol-final .fl{font-family:'Prompt';font-weight:700;font-size:2.4vh;color:var(--sun);}
+  .sol-final .flcap{font-family:'Kanit';font-size:1.5vh;color:var(--mist);margin-top:.3vh;}
+
+  #nav{position:absolute;bottom:0;left:0;right:0;height:var(--topbar-h);display:flex;align-items:center;
+    justify-content:space-between;padding:0 3vw;background:linear-gradient(180deg,rgba(243,247,250,0),#fff 40%);z-index:20;}
+  .nav-btn{width:5vh;height:5vh;border-radius:50%;border:2px solid var(--mist);background:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;color:var(--wave);transition:.2s;}
+  .nav-btn:hover{background:var(--wave);color:#fff;border-color:var(--wave);}
+  .nav-btn:disabled{opacity:.3;cursor:not-allowed;}
+  .nav-btn svg{width:2.4vh;height:2.4vh;}
+  #dots{display:flex;gap:.7vw;align-items:center;flex-wrap:wrap;justify-content:center;max-width:60%;}
+  .dot{width:1.1vh;height:1.1vh;border-radius:50%;background:var(--mist);cursor:pointer;transition:.2s;}
+  .dot.active{background:var(--wave);width:3vh;border-radius:4px;}
+  .page-tag{font-family:'Kanit';font-weight:500;color:#8299ac;font-size:1.6vh;}
+  #fsBtn{position:fixed;top:14px;right:14px;z-index:50;background:rgba(11,31,58,.7);color:#fff;border:none;
+    border-radius:10px;padding:8px 14px;font-family:'Kanit';font-weight:500;font-size:14px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;backdrop-filter:blur(6px);transition:.2s;}
+  #fsBtn:hover{background:rgba(30,96,145,.9);}
+  #fsBtn svg{width:16px;height:16px;}
+  .hint{font-family:'Kanit';font-size:1.5vh;color:#8299ac;margin-top:.8vh;display:flex;align-items:center;gap:.5em;}
+</style>
+</head>
+<body>
+<button id="fsBtn" onclick="toggleFS()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+  <span id="fsLabel">เต็มจอ</span>
+</button>
+
+<div id="stage">
+<div id="deck">
+
+  <!-- 0: ปก -->
+  <section class="slide active" id="cover">
+    <canvas id="coverCanvas"></canvas>
+    <div class="cover-inner">
+      <span class="badge">ฟิสิกส์ 3 · ชั้นมัธยมศึกษาปีที่ 5</span>
+      <h1>พฤติกรรมของคลื่น<br><span class="accent">การแทรกสอด</span></h1>
+      <div class="meta">เมื่อคลื่นสองขบวนพบกัน — เสริมกันหรือหักล้างกัน</div>
+      <div class="teacher">โรงเรียนกาญจนาภิเษกวิทยาลัย สุราษฎร์ธานี</div>
+    </div>
+  </section>
+
+  <!-- 1: การแทรกสอดคืออะไร -->
+  <section class="slide" id="s1">
+    <div class="eyebrow">พฤติกรรมของคลื่น · Interference</div>
+    <h1 class="title">การแทรกสอดคืออะไร</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col">
+        <p class="lead">เมื่อคลื่นตั้งแต่สองขบวนเดินทางมาพบกัน ณ ตำแหน่งหนึ่ง การกระจัดของตัวกลางที่จุดนั้นจะเท่ากับ <b>ผลรวม</b> ของการกระจัดจากคลื่นแต่ละขบวน เรียกว่า <b>หลักการซ้อนทับ</b> (Superposition)</p>
+        <p class="lead" style="margin-top:1.2vh;">ผลของการซ้อนทับทำให้บางตำแหน่งคลื่น <span style="color:#1E6091;font-weight:600">เสริมกัน</span> (แอมพลิจูดมากขึ้น) และบางตำแหน่ง <span style="color:#E8654A;font-weight:600">หักล้างกัน</span> (แอมพลิจูดลดลงหรือเป็นศูนย์) รูปแบบนี้เรียกว่า <b>การแทรกสอด</b></p>
+        <div class="note-box"><b>สังเกต:</b> การแทรกสอดเกิดกับคลื่นทุกชนิด ทั้งคลื่นน้ำ คลื่นเสียง และคลื่นแสง เป็นหลักฐานสำคัญที่ยืนยันว่าแสงมีสมบัติเป็นคลื่น</div>
+      </div>
+      <div class="col">
+        <div class="sim">
+          <span class="sim-label">คลื่น 2 ขบวนซ้อนทับกัน</span>
+          <canvas id="cSuperpose"></canvas>
+          <div class="sim-legend">
+            <div class="lg"><span class="sw" style="background:#7FD8E8"></span>คลื่น A</div>
+            <div class="lg"><span class="sw" style="background:#F4B740"></span>คลื่น B</div>
+            <div class="lg"><span class="sw" style="background:#E8654A"></span>ผลรวม (A+B)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2: ตัวอย่างปรากฏการณ์ -->
+  <section class="slide" id="s2">
+    <div class="eyebrow">พบเห็นได้รอบตัว · Real-world</div>
+    <h1 class="title">ตัวอย่างปรากฏการณ์การแทรกสอด</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col" style="flex:1.15">
+        <div class="pill-list">
+          <div class="pill-item"><div class="ico" style="background:#1E6091">🌊</div>
+            <div class="tx"><b>คลื่นน้ำในถาดคลื่น</b><br>หยดน้ำสองจุดพร้อมกันทำให้เกิดลายเส้นนิ่ง (แนวบัพ) สลับกับแนวที่คลื่นแรง (แนวปฏิบัพ) เห็นได้ชัดในถาดคลื่น</div></div>
+          <div class="pill-item"><div class="ico" style="background:#3BA3C7">🔊</div>
+            <div class="tx"><b>เสียงจากลำโพงสองตัว</b><br>เดินผ่านหน้าลำโพงสองตัวที่เล่นเสียงเดียวกัน จะได้ยินเสียงดัง–ค่อยสลับกันเป็นช่วง เพราะเสียงเสริมและหักล้าง</div></div>
+          <div class="pill-item"><div class="ico" style="background:#F4B740">🫧</div>
+            <div class="tx"><b>สีรุ้งบนฟองสบู่และคราบน้ำมัน</b><br>แสงสะท้อนจากผิวบนและผิวล่างของฟิล์มบางแทรกสอดกัน ทำให้เห็นสีต่างกันตามความหนาของฟิล์ม</div></div>
+          <div class="pill-item"><div class="ico" style="background:#E8654A">💿</div>
+            <div class="tx"><b>สีเหลือบบนแผ่น CD/DVD</b><br>ร่องเล็กๆ บนแผ่นทำหน้าที่เป็นเกรตติง แสงแทรกสอดกันจนแยกเป็นสีรุ้ง</div></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="sim">
+          <span class="sim-label">แสงผ่านช่องคู่ (Young's Double Slit)</span>
+          <canvas id="cYoung"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3: เงื่อนไข coherent -->
+  <section class="slide" id="s3">
+    <div class="eyebrow">เงื่อนไขสำคัญ · Coherent Sources</div>
+    <h1 class="title">เงื่อนไขของการแทรกสอดที่คงตัว</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col">
+        <p class="lead">การจะเห็นลายการแทรกสอดที่ <b>อยู่นิ่งและชัดเจน</b> แหล่งกำเนิดคลื่นทั้งสองต้องเป็น <b>แหล่งอาพันธ์</b> (coherent sources) ซึ่งมีเงื่อนไข:</p>
+        <div class="cards" style="grid-template-columns:1fr;margin-top:1.4vh;">
+          <div class="card"><h3>1 · ความถี่เท่ากัน</h3><p>คลื่นทั้งสองต้องมีความถี่ (และความยาวคลื่น) เท่ากัน ลายแทรกสอดจึงไม่เลื่อนไปมา</p></div>
+          <div class="card c2"><h3>2 · ความต่างเฟสคงที่</h3><p>เฟสของคลื่นทั้งสองต้องต่างกันคงที่ตลอดเวลา (มักให้เฟสตรงกัน) รูปแบบการแทรกสอดจึงอยู่นิ่ง</p></div>
+          <div class="card c3"><h3>3 · แอมพลิจูดใกล้เคียงกัน</h3><p>ถ้าแอมพลิจูดเท่ากัน ตำแหน่งหักล้างจะเป็นศูนย์สนิท ทำให้เห็นลายชัดที่สุด</p></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="sim">
+          <span class="sim-label">อาพันธ์ (นิ่ง) เทียบกับ ไม่อาพันธ์ (เลื่อน)</span>
+          <canvas id="cCoherent"></canvas>
+        </div>
+        <div class="panel" style="margin-top:1.4vh;">
+          <div class="toggle-row">
+            <button class="chip on" id="chCohMode" onclick="toggleCoh()">โหมด: อาพันธ์ (ความถี่เท่า)</button>
+            <button class="chip on" id="chCohPause" onclick="togglePause('coh')">⏸ หยุด/เล่น</button>
+          </div>
+          <div class="note-box" id="cohNote"><b>อาพันธ์:</b> ความถี่เท่ากัน ลายแทรกสอดอยู่นิ่ง สังเกตแนวบัพ–ปฏิบัพได้ชัดเจน</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4: การแทรกสอดแบบเสริม -->
+  <section class="slide" id="s4">
+    <div class="eyebrow">ประเภทที่ 1 · Constructive</div>
+    <h1 class="title">การแทรกสอดแบบเสริม</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col">
+        <p class="lead">เกิดขึ้นเมื่อคลื่นทั้งสองมาถึงจุดหนึ่งด้วย <b>เฟสตรงกัน</b> — สันคลื่นพบสันคลื่น ท้องคลื่นพบท้องคลื่น การกระจัดจึงเสริมกัน</p>
+        <div class="formula" style="margin-top:1.4vh;">
+          <div class="eq">A<sub>รวม</sub> = A₁ <span class="hi">+</span> A₂</div>
+          <div class="cap">แอมพลิจูดรวมมากที่สุด — ตำแหน่งนี้คลื่นแรงที่สุด เรียกว่า <b style="color:#F4B740">ปฏิบัพ</b> (antinode)</div>
+        </div>
+        <div class="note-box"><b>เงื่อนไขความต่างระยะทาง:</b> จุดที่เกิดการเสริมกัน ความต่างของระยะทางจากแหล่งกำเนิดทั้งสองเป็น <b>จำนวนเต็มเท่าของความยาวคลื่น</b><br>|S₁P − S₂P| = nλ &nbsp;(n = 0, 1, 2, ...)</div>
+      </div>
+      <div class="col">
+        <div class="sim">
+          <span class="sim-label">เฟสตรงกัน → เสริมกัน</span>
+          <canvas id="cConstructive"></canvas>
+          <div class="sim-legend">
+            <div class="lg"><span class="sw" style="background:#7FD8E8"></span>คลื่น 1</div>
+            <div class="lg"><span class="sw" style="background:#F4B740"></span>คลื่น 2</div>
+            <div class="lg"><span class="sw" style="background:#E8654A"></span>ผลรวม</div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:1.4vh;">
+          <div class="ctrl">
+            <label>ความต่างเฟส <span class="val"><span id="vConPhase">0</span>°</span></label>
+            <input type="range" id="rConPhase" min="0" max="180" value="0">
+          </div>
+          <div class="note-box" id="conNote"><b>เฟสต่างกัน 0°:</b> เสริมกันเต็มที่ แอมพลิจูดรวมเป็นสองเท่า</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5: การแทรกสอดแบบหักล้าง -->
+  <section class="slide" id="s5">
+    <div class="eyebrow">ประเภทที่ 2 · Destructive</div>
+    <h1 class="title">การแทรกสอดแบบหักล้าง</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col">
+        <p class="lead">เกิดขึ้นเมื่อคลื่นทั้งสองมาถึงจุดหนึ่งด้วย <b>เฟสตรงข้าม</b> — สันคลื่นพบท้องคลื่น การกระจัดจึงหักล้างกัน</p>
+        <div class="formula" style="margin-top:1.4vh;">
+          <div class="eq">A<sub>รวม</sub> = |A₁ <span class="hi">−</span> A₂|</div>
+          <div class="cap">ถ้า A₁ = A₂ แอมพลิจูดรวมเป็นศูนย์ — ตำแหน่งนี้ตัวกลางแทบไม่สั่น เรียกว่า <b style="color:#E8654A">บัพ</b> (node)</div>
+        </div>
+        <div class="note-box"><b>เงื่อนไขความต่างระยะทาง:</b> จุดที่เกิดการหักล้าง ความต่างของระยะทางเป็น <b>จำนวนคี่ของครึ่งความยาวคลื่น</b><br>|S₁P − S₂P| = (n − ½)λ &nbsp;(n = 1, 2, 3, ...)</div>
+      </div>
+      <div class="col">
+        <div class="sim">
+          <span class="sim-label">เฟสตรงข้าม → หักล้างกัน</span>
+          <canvas id="cDestructive"></canvas>
+          <div class="sim-legend">
+            <div class="lg"><span class="sw" style="background:#7FD8E8"></span>คลื่น 1</div>
+            <div class="lg"><span class="sw" style="background:#F4B740"></span>คลื่น 2</div>
+            <div class="lg"><span class="sw" style="background:#E8654A"></span>ผลรวม</div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:1.4vh;">
+          <div class="ctrl">
+            <label>ความต่างเฟส <span class="val"><span id="vDesPhase">180</span>°</span></label>
+            <input type="range" id="rDesPhase" min="0" max="360" value="180">
+          </div>
+          <div class="note-box" id="desNote"><b>เฟสต่างกัน 180°:</b> หักล้างกันเต็มที่ แอมพลิจูดรวมเป็นศูนย์</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6: บัพและปฏิบัพ -->
+  <section class="slide" id="s6">
+    <div class="eyebrow">แนวการแทรกสอด · Nodes & Antinodes</div>
+    <h1 class="title">บัพและปฏิบัพ</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col" style="flex:.9">
+        <div class="cards" style="grid-template-columns:1fr;">
+          <div class="card c3"><h3>⚡ ปฏิบัพ (Antinode)</h3><p>แนวที่คลื่นแทรกสอด <b>เสริมกัน</b> ตลอดเวลา ตัวกลางสั่นด้วยแอมพลิจูดมากที่สุด เกิดจากความต่างระยะทาง = nλ</p></div>
+          <div class="card c4"><h3>⭕ บัพ (Node)</h3><p>แนวที่คลื่นแทรกสอด <b>หักล้างกัน</b> ตลอดเวลา ตัวกลางแทบไม่สั่น เกิดจากความต่างระยะทาง = (n−½)λ</p></div>
+        </div>
+        <div class="note-box"><b>แนวบัพและปฏิบัพเรียงสลับกัน</b> โดยมีปฏิบัพกลาง (n=0) อยู่ตรงกึ่งกลางระหว่างแหล่งกำเนิดทั้งสองพอดี แล้วสลับเป็นบัพ–ปฏิบัพออกไปทั้งสองข้าง</div>
+      </div>
+      <div class="col" style="flex:1.15">
+        <div class="sim">
+          <span class="sim-label">แหล่งกำเนิดคู่ · แนวบัพ (แดง) และปฏิบัพ (ทอง)</span>
+          <canvas id="cNodes"></canvas>
+        </div>
+        <div class="panel" style="margin-top:1.4vh;">
+          <div class="ctrl">
+            <label>ระยะห่างแหล่งกำเนิด d <span class="val"><span id="vNodeD">3.0</span> λ</span></label>
+            <input type="range" id="rNodeD" min="15" max="50" value="30">
+          </div>
+          <div class="toggle-row">
+            <button class="chip on" id="chNodeLines" onclick="toggleNodeLines()">แสดงแนวบัพ–ปฏิบัพ</button>
+            <button class="chip on" id="chNodePause" onclick="togglePause('nodes')">⏸ หยุด/เล่น</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7: ความต่างระยะทาง -->
+  <section class="slide" id="s7">
+    <div class="eyebrow">หัวใจของการคำนวณ · Path Difference</div>
+    <h1 class="title">ความต่างระยะทาง (Path Difference)</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col">
+        <p class="lead">ที่จุด P ใดๆ คลื่นจากแหล่ง S₁ และ S₂ เดินทางมาถึงด้วยระยะทางต่างกัน เรียกผลต่างนี้ว่า <b>ความต่างระยะทาง</b></p>
+        <div class="formula" style="margin-top:1.2vh;">
+          <div class="eq">Δ = <span class="hi">|S₁P − S₂P|</span></div>
+          <div class="cap">ความต่างระยะทางเป็นตัวกำหนดว่าจุดนั้นเสริมหรือหักล้าง</div>
+        </div>
+        <div class="two-formula" style="margin-top:1.2vh;">
+          <div class="formula" style="background:linear-gradient(135deg,#1E6091,#3BA3C7);">
+            <div class="eq" style="font-size:2.1vh;">Δ = nλ</div>
+            <div class="cap">ปฏิบัพ (เสริม)<br>n = 0,1,2,...</div>
+          </div>
+          <div class="formula" style="background:linear-gradient(135deg,#c0472f,#E8654A);">
+            <div class="eq" style="font-size:2.1vh;">Δ = (n−½)λ</div>
+            <div class="cap">บัพ (หักล้าง)<br>n = 1,2,3,...</div>
+          </div>
+        </div>
+      </div>
+      <div class="col" style="flex:1.25">
+        <div class="sim">
+          <span class="sim-label">แตะแนวบัพ (แดง) หรือปฏิบัพ (ทอง) บนรูป · จุด P จะย้ายไปบนแนวนั้น</span>
+          <canvas id="cPathDiff" style="cursor:pointer"></canvas>
+        </div>
+        <div class="panel" style="margin-top:1.2vh;">
+          <div class="readout" style="margin-top:0">
+            <div class="stat"><div class="n" id="oPathS1">—</div><div class="l">S₁P (λ)</div></div>
+            <div class="stat"><div class="n" id="oPathS2">—</div><div class="l">S₂P (λ)</div></div>
+            <div class="stat"><div class="n" id="oPathD">—</div><div class="l">Δ = |S₁P−S₂P|</div></div>
+            <div class="stat"><div class="n" id="oPathType">—</div><div class="l">ชนิดแนว</div></div>
+          </div>
+          <div class="note-box" id="pathNote" style="font-size:1.55vh;"><b>แตะแนวใดก็ได้บนรูป</b> เพื่อดูว่าจุดบนแนวนั้นมีระยะจากแหล่งกำเนิดทั้งสองต่างกันเท่าใด — ทุกจุดบนแนวเดียวกันมีความต่างระยะทางเท่ากันเสมอ</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8: การคำนวณ -->
+  <section class="slide" id="s8">
+    <div class="eyebrow">สมการที่ต้องใช้ · Calculation</div>
+    <h1 class="title">การคำนวณการแทรกสอด</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col">
+        <p class="lead">การแทรกสอดในบทคลื่นใช้เพียง <b>ความต่างระยะทาง</b> จากแหล่งกำเนิดทั้งสองไปยังจุด P เท่านั้น ไม่ต้องใช้มุมหรือการประมาณค่า</p>
+        <div class="formula" style="margin-top:1.2vh;">
+          <div class="eq">Δ = <span class="hi">|S₁P − S₂P|</span></div>
+          <div class="cap">ความต่างระยะทางจากแหล่งกำเนิดทั้งสองไปยังจุด P</div>
+        </div>
+        <div class="two-formula" style="margin-top:1vh;">
+          <div class="formula" style="background:linear-gradient(135deg,#1E6091,#3BA3C7);">
+            <div class="eq" style="font-size:2vh;">Δ = nλ</div>
+            <div class="cap"><b>ปฏิบัพ</b> (เสริมกัน)<br>n = 0, 1, 2, ...</div>
+          </div>
+          <div class="formula" style="background:linear-gradient(135deg,#c0472f,#E8654A);">
+            <div class="eq" style="font-size:2vh;">Δ = (n − ½)λ</div>
+            <div class="cap"><b>บัพ</b> (หักล้างกัน)<br>n = 1, 2, 3, ...</div>
+          </div>
+        </div>
+        <div class="note-box"><b>ขั้นตอนแก้โจทย์:</b> หา Δ = |S₁P − S₂P| ก่อน แล้วเทียบว่าเป็นกี่เท่าของ λ ถ้าได้จำนวนเต็ม = ปฏิบัพ ถ้าได้ครึ่งจำนวนคี่ (½, 1½, 2½, ...) = บัพ</div>
+      </div>
+      <div class="col">
+        <div class="sim">
+          <span class="sim-label">นับ Δ เป็นกี่เท่าของ λ · เลื่อนดูแต่ละแนว</span>
+          <canvas id="cCalc"></canvas>
+        </div>
+        <div class="panel" style="margin-top:1.4vh;">
+          <div class="ctrl">
+            <label>เลือกแนว <span class="val" id="vCalcSel">ปฏิบัพ n=1</span></label>
+            <input type="range" id="rCalcN" min="0" max="2" value="1">
+          </div>
+          <div class="toggle-row">
+            <button class="chip on" id="chCalcKind" onclick="toggleCalcKind()">แสดง: ปฏิบัพ (Δ=nλ)</button>
+          </div>
+          <div class="readout">
+            <div class="stat"><div class="n" id="oCalcPd">1λ</div><div class="l">Δ = |S₁P−S₂P|</div></div>
+            <div class="stat"><div class="n" id="oCalcType">ปฏิบัพ</div><div class="l">ชนิดแนว</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9: แบบจำลองรวม -->
+  <section class="slide" id="s9">
+    <div class="eyebrow">แบบจำลองรวมทุกอย่าง · Full Simulation</div>
+    <h1 class="title">แบบจำลองการแทรกสอดแบบสมบูรณ์</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col" style="flex:1.4">
+        <div class="sim">
+          <span class="sim-label">แหล่งกำเนิดคู่ · ปรับได้ทุกค่า</span>
+          <canvas id="cFull"></canvas>
+          <div class="sim-legend">
+            <div class="lg"><span class="sw" style="background:#F4B740"></span>ปฏิบัพ (เสริม)</div>
+            <div class="lg"><span class="sw" style="background:#E8654A"></span>บัพ (หักล้าง)</div>
+            <div class="lg"><span class="sw" style="background:#7FD8E8"></span>สันคลื่น</div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="panel">
+          <div class="ctrl">
+            <label>ความยาวคลื่น λ <span class="val"><span id="vFullLam">28</span></span></label>
+            <input type="range" id="rFullLam" min="18" max="46" value="28">
+          </div>
+          <div class="ctrl">
+            <label>ระยะห่างแหล่งกำเนิด d <span class="val"><span id="vFullD">2.5</span> λ</span></label>
+            <input type="range" id="rFullD" min="15" max="45" value="25">
+          </div>
+          <div class="toggle-row">
+            <button class="chip" id="chFullNodes" onclick="toggleFullNodes()">แนวบัพ–ปฏิบัพ</button>
+            <button class="chip" id="chFullField" onclick="toggleFullField()">โหมดความเข้ม</button>
+          </div>
+          <div class="toggle-row">
+            <button class="chip on" id="chFullPause" onclick="togglePause('full')">⏸ หยุด/เล่น</button>
+          </div>
+          <div class="readout">
+            <div class="stat"><div class="n" id="oFullAnti">—</div><div class="l">จำนวนแนวปฏิบัพ</div></div>
+            <div class="stat"><div class="n" id="oFullRatio">—</div><div class="l">d / λ</div></div>
+          </div>
+          <div class="note-box" style="font-size:1.5vh;">ยิ่ง <b>d/λ มาก</b> ยิ่งมีแนวปฏิบัพมาก และแนวอยู่ชิดกันมากขึ้น</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10: โจทย์ตัวอย่าง -->
+  <!-- 10: โจทย์ intro -->
+  <section class="slide" id="s10">
+    <div class="eyebrow">ฝึกทำ · Worked Examples</div>
+    <h1 class="title">โจทย์ตัวอย่าง 6 ข้อ</h1>
+    <div class="divider"></div>
+    <div class="cols">
+      <div class="col">
+        <p class="lead">โจทย์ต่อไปนี้ใช้เพียงสมการ <b>ความต่างระยะทาง</b> เท่านั้น ทบทวนสูตรก่อนเริ่ม:</p>
+        <div class="two-formula" style="margin-top:1.4vh;">
+          <div class="formula" style="background:linear-gradient(135deg,#1E6091,#3BA3C7);">
+            <div class="eq">Δ = nλ</div>
+            <div class="cap"><b>ปฏิบัพ</b> (เสริมกัน) · n = 0,1,2,...</div>
+          </div>
+          <div class="formula" style="background:linear-gradient(135deg,#c0472f,#E8654A);">
+            <div class="eq">Δ = (n − ½)λ</div>
+            <div class="cap"><b>บัพ</b> (หักล้างกัน) · n = 1,2,3,...</div>
+          </div>
+        </div>
+        <div class="note-box" style="margin-top:1.4vh;">โดยที่ Δ = |S₁P − S₂P| คือความต่างระยะทางจากแหล่งกำเนิดทั้งสองไปยังจุด P</div>
+      </div>
+      <div class="col" style="justify-content:center;align-items:center;">
+        <div style="text-align:center;">
+          <div style="font-size:8vh;">📝</div>
+          <p class="lead" style="text-align:center;margin-top:1vh;">มี 6 ข้อ ข้อละหนึ่งหน้า<br>กดปุ่ม <b>"ดูเฉลย"</b> เพื่อดูวิธีทำเต็มรูปแบบ</p>
+          <div class="hint" style="justify-content:center;margin-top:1.4vh;">กดลูกศร → เพื่อไปโจทย์ข้อแรก</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- โจทย์ 6 ข้อ (สร้างด้วย JS) -->
+  <section class="slide ex-slide" id="ex1"></section>
+  <section class="slide ex-slide" id="ex2"></section>
+  <section class="slide ex-slide" id="ex3"></section>
+  <section class="slide ex-slide" id="ex4"></section>
+  <section class="slide ex-slide" id="ex5"></section>
+  <section class="slide ex-slide" id="ex6"></section>
+
+  <!-- Navigation -->
+  <div id="nav">
+    <button class="nav-btn" id="prevB" onclick="go(-1)" aria-label="ก่อนหน้า">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div id="dots"></div>
+    <div style="display:flex;align-items:center;gap:1.4vw;">
+      <span class="page-tag" id="pageTag">1 / 17</span>
+      <button class="nav-btn" id="nextB" onclick="go(1)" aria-label="ถัดไป">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+</div>
+<script>
+/* ============ NAVIGATION ============ */
+const paused={coh:false,nodes:false,full:false};
+const slides=[...document.querySelectorAll('.slide')];
+const N=slides.length;let cur=0;
+const dots=document.getElementById('dots');
+slides.forEach((_,i)=>{const d=document.createElement('div');d.className='dot'+(i===0?' active':'');
+  d.onclick=()=>jump(i);dots.appendChild(d);});
+function render(){
+  slides.forEach((s,i)=>s.classList.toggle('active',i===cur));
+  [...dots.children].forEach((d,i)=>d.classList.toggle('active',i===cur));
+  document.getElementById('pageTag').textContent=`${cur+1} / ${N}`;
+  document.getElementById('prevB').disabled=cur===0;
+  document.getElementById('nextB').disabled=cur===N-1;
+}
+function go(d){cur=Math.max(0,Math.min(N-1,cur+d));render();}
+function jump(i){cur=i;render();}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' ')go(1);
+  if(e.key==='ArrowLeft')go(-1);
+  if(e.key==='f'||e.key==='F')toggleFS();
+});
+function togglePause(key){
+  paused[key]=!paused[key];
+  const id={coh:'chCohPause',nodes:'chNodePause',full:'chFullPause'}[key];
+  const el=document.getElementById(id);
+  if(el){el.classList.toggle('on',!paused[key]);
+    el.textContent=paused[key]?'▶ เล่นต่อ':'⏸ หยุด/เล่น';}
+}
+render();
+
+/* ============ FULLSCREEN ============ */
+function toggleFS(){
+  if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}
+  else{document.exitFullscreen&&document.exitFullscreen();}
+}
+document.addEventListener('fullscreenchange',()=>{
+  document.getElementById('fsLabel').textContent=document.fullscreenElement?'ออกจากเต็มจอ':'เต็มจอ';
+});
+
+/* ============ HELPERS ============ */
+function fit(cv){const r=cv.getBoundingClientRect();const dpr=window.devicePixelRatio||1;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+  return{ctx,w:r.width,h:r.height};}
+
+/* ============ COVER ============ */
+(function(){const cv=document.getElementById('coverCanvas');
+  function draw(t){const{ctx,w,h}=fit(cv);ctx.clearRect(0,0,w,h);
+    // สองแหล่งกำเนิดเป็นวงกลมกระจาย
+    const s1={x:w*0.38,y:h*0.62}, s2={x:w*0.62,y:h*0.62};
+    for(const s of [s1,s2]){
+      for(let r=10;r<w*0.5;r+=34){
+        const rr=(r+t*0.04)%(w*0.5);
+        const a=Math.max(0,0.32*(1-rr/(w*0.5)));
+        ctx.strokeStyle='rgba(127,216,232,'+a.toFixed(3)+')';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(s.x,s.y,rr,0,7);ctx.stroke();
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ============ 1. SUPERPOSE (slide 1) ============ */
+(function(){const cv=document.getElementById('cSuperpose');let t=0;
+  function draw(){const{ctx,w,h}=fit(cv);if(w<20||h<20){requestAnimationFrame(draw);return;}ctx.clearRect(0,0,w,h);
+    t+=0.02;
+    const midY=h*0.5, amp=h*0.13, k=2*Math.PI/(w*0.32);
+    function wave(color,phase,yoff,lw){
+      ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.beginPath();
+      for(let x=0;x<=w;x++){const y=yoff+amp*Math.sin(k*x-t*2+phase);
+        x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+      ctx.stroke();
+    }
+    // เส้นแกน
+    ctx.strokeStyle='rgba(127,216,232,.15)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,midY);ctx.lineTo(w,midY);ctx.stroke();
+    // คลื่น A, B และผลรวม
+    wave('rgba(127,216,232,.85)',0,h*0.28,2.5);
+    wave('rgba(244,183,64,.85)',0.6,h*0.5,2.5);
+    // ผลรวม
+    ctx.strokeStyle='#E8654A';ctx.lineWidth=3.5;ctx.beginPath();
+    for(let x=0;x<=w;x++){
+      const y=h*0.75+amp*(Math.sin(k*x-t*2)+Math.sin(k*x-t*2+0.6));
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ============ 2. YOUNG double slit (slide 2) ============ */
+(function(){const cv=document.getElementById('cYoung');let t=0;
+  function draw(){const{ctx,w,h}=fit(cv);if(w<20||h<20){requestAnimationFrame(draw);return;}ctx.clearRect(0,0,w,h);
+    t+=0.02;
+    const slitX=w*0.2, s1={x:slitX,y:h*0.4}, s2={x:slitX,y:h*0.6};
+    const lam=26;
+    // คลื่นระนาบเข้าช่อง (ซ้าย)
+    ctx.strokeStyle='rgba(127,216,232,.3)';ctx.lineWidth=2;
+    for(let x=(t*40)%lam;x<slitX;x+=lam){
+      ctx.beginPath();ctx.moveTo(x,h*0.1);ctx.lineTo(x,h*0.9);ctx.stroke();
+    }
+    // แผ่นกั้น
+    ctx.fillStyle='#0a1626';ctx.fillRect(slitX-3,0,6,h);
+    ctx.clearRect(slitX-3,s1.y-8,6,16);ctx.clearRect(slitX-3,s2.y-8,6,16);
+    // คลื่นวงกลมจากช่องคู่
+    for(const s of [s1,s2]){
+      for(let r=(t*40)%lam;r<w;r+=lam){
+        ctx.strokeStyle='rgba(127,216,232,'+Math.max(0,0.4*(1-r/(w*0.9))).toFixed(3)+')';
+        ctx.lineWidth=1.6;ctx.beginPath();
+        ctx.arc(s.x,s.y,r,-Math.PI/2.1,Math.PI/2.1);ctx.stroke();
+      }
+    }
+    // ฉากขวา + ลายแทรกสอด
+    const scrX=w*0.94;
+    ctx.fillStyle='rgba(255,255,255,.06)';ctx.fillRect(scrX,0,w-scrX,h);
+    for(let y=0;y<h;y+=2){
+      const d1=Math.hypot(scrX-s1.x,y-s1.y), d2=Math.hypot(scrX-s2.x,y-s2.y);
+      const I=Math.pow(Math.cos(Math.PI*(d1-d2)/lam),2);
+      ctx.fillStyle='rgba(244,183,64,'+(I*0.9).toFixed(3)+')';
+      ctx.fillRect(scrX,y,w-scrX,2);
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ============ 3. COHERENT vs not (slide 3) ============ */
+let cohCoherent=true;
+function toggleCoh(){
+  cohCoherent=!cohCoherent;
+  const btn=document.getElementById('chCohMode');
+  const note=document.getElementById('cohNote');
+  btn.textContent=cohCoherent?'โหมด: อาพันธ์ (ความถี่เท่า)':'โหมด: ไม่อาพันธ์ (ความถี่ต่าง)';
+  note.innerHTML=cohCoherent
+    ?'<b>อาพันธ์:</b> ความถี่เท่ากัน ลายแทรกสอดอยู่นิ่ง สังเกตแนวบัพ–ปฏิบัพได้ชัดเจน'
+    :'<b>ไม่อาพันธ์:</b> ความถี่ต่างกัน ลายแทรกสอดเลื่อนไปมาตลอด มองไม่เห็นแนวนิ่ง';
+}
+(function(){const cv=document.getElementById('cCoherent');let t=0;
+  function draw(){const{ctx,w,h}=fit(cv);if(w<20||h<20){requestAnimationFrame(draw);return;}ctx.clearRect(0,0,w,h);
+    if(!paused.coh)t+=0.02;
+    const s1={x:w*0.5,y:h*0.28}, s2={x:w*0.5,y:h*0.72};
+    const lam=24;
+    const f2 = cohCoherent ? 1 : 1.18;   // ไม่อาพันธ์ = ความถี่ต่าง
+    // field แทรกสอด
+    const step=5;
+    for(let x=0;x<w;x+=step){
+      for(let y=0;y<h;y+=step){
+        const d1=Math.hypot(x-s1.x,y-s1.y), d2=Math.hypot(x-s2.x,y-s2.y);
+        const v=Math.sin(2*Math.PI*d1/lam-t*3)+Math.sin(2*Math.PI*d2/lam*f2-t*3*f2);
+        const a=(v+2)/4;
+        ctx.fillStyle='rgba('+Math.round(30+a*100)+','+Math.round(96+a*120)+','+Math.round(145+a*90)+','+(0.5+a*0.5).toFixed(2)+')';
+        ctx.fillRect(x,y,step,step);
+      }
+    }
+    // แหล่งกำเนิด
+    for(const s of [s1,s2]){ctx.fillStyle='#F4B740';ctx.beginPath();ctx.arc(s.x,s.y,5,0,7);ctx.fill();
+      ctx.strokeStyle='rgba(244,183,64,.5)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(s.x,s.y,9,0,7);ctx.stroke();}
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ============ 4. CONSTRUCTIVE (slide 4) ============ */
+(function(){const cv=document.getElementById('cConstructive');let t=0;
+  const r=document.getElementById('rConPhase'), v=document.getElementById('vConPhase'), note=document.getElementById('conNote');
+  function upd(){
+    v.textContent=r.value;
+    const ph=+r.value;
+    let msg;
+    if(ph===0)msg='<b>เฟสต่างกัน 0°:</b> เสริมกันเต็มที่ แอมพลิจูดรวมเป็นสองเท่า';
+    else if(ph<90)msg='<b>เฟสต่างกัน '+ph+'°:</b> ยังเสริมกัน แต่แอมพลิจูดรวมลดลงบ้าง';
+    else if(ph===180)msg='<b>เฟสต่างกัน 180°:</b> หักล้างกันหมด (นี่คือกรณีบัพ)';
+    else msg='<b>เฟสต่างกัน '+ph+'°:</b> เริ่มหักล้าง แอมพลิจูดรวมน้อยลง';
+    note.innerHTML=msg;
+  }
+  r.addEventListener('input',upd);
+  function draw(){const{ctx,w,h}=fit(cv);if(w<20||h<20){requestAnimationFrame(draw);return;}ctx.clearRect(0,0,w,h);
+    t+=0.02;
+    const ph=(+r.value)*Math.PI/180;
+    const amp=h*0.15, k=2*Math.PI/(w*0.34);
+    ctx.strokeStyle='rgba(127,216,232,.15)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,h*0.72);ctx.lineTo(w,h*0.72);ctx.stroke();
+    function wave(color,phase,yoff,lw){ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.beginPath();
+      for(let x=0;x<=w;x++){const y=yoff+amp*0.7*Math.sin(k*x-t*2+phase);x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();}
+    wave('rgba(127,216,232,.8)',0,h*0.26,2.5);
+    wave('rgba(244,183,64,.8)',ph,h*0.48,2.5);
+    ctx.strokeStyle='#E8654A';ctx.lineWidth=3.8;ctx.beginPath();
+    for(let x=0;x<=w;x++){const y=h*0.72+amp*0.7*(Math.sin(k*x-t*2)+Math.sin(k*x-t*2+ph));
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();
+    requestAnimationFrame(draw);
+  }
+  draw();upd();
+})();
+
+/* ============ 5. DESTRUCTIVE (slide 5) ============ */
+(function(){const cv=document.getElementById('cDestructive');let t=0;
+  const r=document.getElementById('rDesPhase'), v=document.getElementById('vDesPhase'), note=document.getElementById('desNote');
+  function upd(){
+    v.textContent=r.value;
+    const ph=+r.value;
+    let msg;
+    if(ph===180)msg='<b>เฟสต่างกัน 180°:</b> หักล้างกันเต็มที่ แอมพลิจูดรวมเป็นศูนย์';
+    else if(ph===0||ph===360)msg='<b>เฟสต่างกัน '+ph+'°:</b> เสริมกันเต็มที่ (นี่คือกรณีปฏิบัพ)';
+    else if(Math.abs(ph-180)<50)msg='<b>เฟสต่างกัน '+ph+'°:</b> เกือบหักล้างหมด แอมพลิจูดรวมน้อยมาก';
+    else msg='<b>เฟสต่างกัน '+ph+'°:</b> หักล้างบางส่วน';
+    note.innerHTML=msg;
+  }
+  r.addEventListener('input',upd);
+  function draw(){const{ctx,w,h}=fit(cv);if(w<20||h<20){requestAnimationFrame(draw);return;}ctx.clearRect(0,0,w,h);
+    t+=0.02;
+    const ph=(+r.value)*Math.PI/180;
+    const amp=h*0.15, k=2*Math.PI/(w*0.34);
+    ctx.strokeStyle='rgba(127,216,232,.15)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,h*0.72);ctx.lineTo(w,h*0.72);ctx.stroke();
+    function wave(color,phase,yoff,lw){ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.beginPath();
+      for(let x=0;x<=w;x++){const y=yoff+amp*0.7*Math.sin(k*x-t*2+phase);x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();}
+    wave('rgba(127,216,232,.8)',0,h*0.26,2.5);
+    wave('rgba(244,183,64,.8)',ph,h*0.48,2.5);
+    ctx.strokeStyle='#E8654A';ctx.lineWidth=3.8;ctx.beginPath();
+    for(let x=0;x<=w;x++){const y=h*0.72+amp*0.7*(Math.sin(k*x-t*2)+Math.sin(k*x-t*2+ph));
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();
+    requestAnimationFrame(draw);
+  }
+  draw();upd();
+})();
+
+/* ============ 6. NODES & ANTINODES (slide 6) ============ */
+let nodeLines=true;
+function toggleNodeLines(){nodeLines=!nodeLines;document.getElementById('chNodeLines').classList.toggle('on',nodeLines);}
+(function(){const cv=document.getElementById('cNodes');let t=0;
+  const rD=document.getElementById('rNodeD'), vD=document.getElementById('vNodeD');
+  function upd(){vD.textContent=(rD.value/10).toFixed(1);}
+  rD.addEventListener('input',upd);
+  function draw(){const{ctx,w,h}=fit(cv);if(w<20||h<20){requestAnimationFrame(draw);return;}ctx.clearRect(0,0,w,h);
+    if(!paused.nodes)t+=0.02;
+    const lam=26;
+    const d=(+rD.value/10)*lam;
+    const cx=w*0.5, cy=h*0.5;
+    const s1={x:cx,y:cy-d/2}, s2={x:cx,y:cy+d/2};
+    // field
+    const step=5;
+    for(let x=0;x<w;x+=step){for(let y=0;y<h;y+=step){
+      const d1=Math.hypot(x-s1.x,y-s1.y), d2=Math.hypot(x-s2.x,y-s2.y);
+      const v=Math.sin(2*Math.PI*d1/lam-t*3)+Math.sin(2*Math.PI*d2/lam-t*3);
+      const a=(v+2)/4;
+      ctx.fillStyle='rgba('+Math.round(20+a*90)+','+Math.round(60+a*130)+','+Math.round(110+a*100)+','+(0.55+a*0.45).toFixed(2)+')';
+      ctx.fillRect(x,y,step,step);
+    }}
+    // แนวบัพ-ปฏิบัพ (เส้นความต่างระยะทางคงที่ = ไฮเพอร์โบลา วาดจากการสแกน)
+    if(nodeLines){
+      for(let x=0;x<w;x+=3){for(let y=0;y<h;y+=3){
+        const pd=(Math.hypot(x-s1.x,y-s1.y)-Math.hypot(x-s2.x,y-s2.y))/lam;
+        const near=Math.abs(pd-Math.round(pd));
+        const nearHalf=Math.abs(pd-(Math.round(pd-0.5)+0.5));
+        if(near<0.035){ctx.fillStyle='rgba(244,183,64,.9)';ctx.fillRect(x,y,2.4,2.4);}
+        else if(nearHalf<0.035){ctx.fillStyle='rgba(232,101,74,.85)';ctx.fillRect(x,y,2.4,2.4);}
+      }}
+    }
+    // แหล่งกำเนิด
+    for(const s of [s1,s2]){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.x,s.y,5,0,7);ctx.fill();}
+    requestAnimationFrame(draw);
+  }
+  draw();upd();
+})();
+
+/* ============ 7. PATH DIFFERENCE (slide 7) — เลือกแนวบัพ/ปฏิบัพ ============ */
+(function(){const cv=document.getElementById('cPathDiff');let t=0;
+  const oS1=document.getElementById('oPathS1'), oS2=document.getElementById('oPathS2');
+  const oD=document.getElementById('oPathD'), oT=document.getElementById('oPathType');
+  const note=document.getElementById('pathNote');
+  const LAM=42;                 // ความยาวคลื่นยาวขึ้น (หน้าคลื่นห่างกันชัด)
+  // เรขาคณิต (สัดส่วนของ w,h) คำนวณใหม่ทุกเฟรมจาก state ด้านล่าง
+  let sel={kind:'anti',n:0};    // แนวที่เลือก: ปฏิบัพกลาง n=0
+  let geo=null;                 // เก็บ s1,s2,P ล่าสุดสำหรับ hit-test
+
+  // หาจุด P บนแนวที่มี |d1-d2| = target โดยสแกน y ที่ x=px
+  function findP(target, px, s1, s2){
+    let best=null;
+    for(let y=6;y<geo.h-6;y+=1){
+      const d1=Math.hypot(px-s1.x,y-s1.y), d2=Math.hypot(px-s2.x,y-s2.y);
+      const diff=Math.abs(d1-d2), sc=Math.abs(diff-target);
+      if(!best||sc<best.sc) best={y,sc,d1,d2};
+    }
+    return best;
+  }
+
+  cv.addEventListener('click',ev=>{
+    if(!geo)return;
+    const r=cv.getBoundingClientRect();
+    const mx=ev.clientX-r.left, my=ev.clientY-r.top;
+    // หาแนวที่ใกล้ตำแหน่งคลิกที่สุด: คำนวณ pd ที่จุดคลิก แล้ว snap เป็น n หรือ n-0.5
+    const d1=Math.hypot(mx-geo.s1.x,my-geo.s1.y), d2=Math.hypot(mx-geo.s2.x,my-geo.s2.y);
+    const pd=Math.abs(d1-d2)/LAM;
+    const nearInt=Math.round(pd), nearHalf=Math.round(pd-0.5)+0.5;
+    if(Math.abs(pd-nearInt)<=Math.abs(pd-nearHalf)){
+      sel={kind:'anti',n:Math.max(0,nearInt)};
+    }else{
+      sel={kind:'node',n:Math.max(1,Math.round(nearHalf+0.5))};
+    }
+  });
+
+  function draw(){const g=fit(cv);const{ctx,w,h}=g;geo={w,h};
+    if(w<20||h<20){requestAnimationFrame(draw);return;}   // ข้ามเมื่อสไลด์ซ่อน (canvas ขนาด 0)
+    ctx.clearRect(0,0,w,h);
+    if(!paused.nodes)t+=0.006;   // ลายเกือบนิ่ง (ช้ามาก) เพื่อให้ดูรายละเอียดได้
+    const cx=w*0.16, cy=h*0.5, d=LAM*2.4;
+    const s1={x:cx,y:cy-d/2}, s2={x:cx,y:cy+d/2};
+    geo.s1=s1;geo.s2=s2;
+
+    // ---- ลายแทรกสอด (นิ่ง) ----
+    const step=5;
+    for(let x=0;x<w;x+=step){for(let y=0;y<h;y+=step){
+      const d1=Math.hypot(x-s1.x,y-s1.y), d2=Math.hypot(x-s2.x,y-s2.y);
+      const v=Math.sin(2*Math.PI*d1/LAM-t)+Math.sin(2*Math.PI*d2/LAM-t);
+      const a=(v+2)/4;
+      ctx.fillStyle='rgba('+Math.round(18+a*80)+','+Math.round(58+a*120)+','+Math.round(100+a*95)+','+(0.5+a*0.4).toFixed(2)+')';
+      ctx.fillRect(x,y,step,step);
+    }}
+
+    // ---- วาดแนวบัพ/ปฏิบัพ + ชื่อ ----
+    const maxN=Math.floor(d/LAM);
+    // ปฏิบัพ n=0..maxN (ทอง) และบัพ n=1..maxN (แดง) วาดเป็นจุดไฮเพอร์โบลา
+    for(let x=Math.ceil(cx);x<w;x+=3){for(let y=0;y<h;y+=3){
+      const pd=(Math.hypot(x-s1.x,y-s1.y)-Math.hypot(x-s2.x,y-s2.y))/LAM;
+      const apd=Math.abs(pd);
+      const nearI=Math.abs(apd-Math.round(apd));
+      const nearH=Math.abs(apd-(Math.round(apd-0.5)+0.5));
+      if(nearI<0.028){ctx.fillStyle='rgba(244,183,64,.55)';ctx.fillRect(x,y,2.2,2.2);}
+      else if(nearH<0.028){ctx.fillStyle='rgba(232,101,74,.5)';ctx.fillRect(x,y,2.2,2.2);}
+    }}
+
+    // ---- ป้ายชื่อแนวปฏิบัพ/บัพ ที่ขอบบน ----
+    ctx.font='700 '+Math.max(11,h*0.036)+"px Prompt";ctx.textAlign='center';
+    for(let n=0;n<=maxN;n++){
+      // ปฏิบัพ: หาตำแหน่ง y ที่ขอบบน (y เล็ก) บนเส้น x=w*0.86
+      const pAnti=findP(n*LAM, w*0.86, s1, s2);
+      if(pAnti&&pAnti.sc<6){
+        // เฉพาะครึ่งบน เพื่อไม่ให้ป้ายซ้ำ (สมมาตร)
+        ctx.fillStyle='#F4B740';
+        const lbl=n===0?'ปฏิบัพกลาง':'ปฏิบัพ n='+n;
+        // วางป้ายเยื้องขึ้นเล็กน้อย
+      }
+    }
+    ctx.textAlign='left';
+
+    // ---- จุด P บนแนวที่เลือก ----
+    const target=(sel.kind==='anti'?sel.n:(sel.n-0.5))*LAM;
+    const pRes=findP(target, w*0.82, s1, s2);
+    const P={x:w*0.82, y:pRes.y};
+    const d1=pRes.d1, d2=pRes.d2;
+    geo.P=P;
+
+    // เส้นจาก S1,S2 ไป P
+    ctx.strokeStyle='#7FD8E8';ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(s1.x,s1.y);ctx.lineTo(P.x,P.y);ctx.stroke();
+    ctx.strokeStyle='#F4B740';ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(s2.x,s2.y);ctx.lineTo(P.x,P.y);ctx.stroke();
+
+    // แหล่งกำเนิด
+    for(const s of [s1,s2]){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.x,s.y,6,0,7);ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(s.x,s.y,10,0,7);ctx.stroke();}
+    ctx.fillStyle='#fff';ctx.font='700 '+Math.max(13,h*0.05)+"px Kanit";
+    ctx.fillText('S₁',s1.x-28,s1.y+5);ctx.fillText('S₂',s2.x-28,s2.y+6);
+    // จุด P เด่น
+    const pcol=sel.kind==='anti'?'#F4B740':'#E8654A';
+    ctx.fillStyle=pcol;ctx.beginPath();ctx.arc(P.x,P.y,8,0,7);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.fillText('P',P.x+13,P.y+5);
+
+    // ป้ายชนิดแนวบนจุด P
+    ctx.font='700 '+Math.max(12,h*0.042)+"px Prompt";ctx.textAlign='center';
+    ctx.fillStyle=pcol;
+    const tag=sel.kind==='anti'?(sel.n===0?'ปฏิบัพกลาง (n=0)':'ปฏิบัพ n='+sel.n):'บัพ n='+sel.n;
+    // กล่องพื้นหลังป้าย
+    const tw=ctx.measureText(tag).width;
+    ctx.fillStyle='rgba(7,20,40,.75)';
+    ctx.fillRect(P.x-tw/2-8, P.y-Math.max(30,h*0.1), tw+16, Math.max(22,h*0.07));
+    ctx.fillStyle=pcol;
+    ctx.fillText(tag, P.x, P.y-Math.max(14,h*0.05));
+    ctx.textAlign='left';
+
+    // ---- อัปเดตค่าใต้รูป ----
+    oS1.textContent=(d1/LAM).toFixed(2)+'λ';
+    oS2.textContent=(d2/LAM).toFixed(2)+'λ';
+    const pd=Math.abs(d1-d2)/LAM;
+    oD.textContent=pd.toFixed(2)+'λ';
+    if(sel.kind==='anti'){oT.textContent='ปฏิบัพ';oT.style.color='#F4B740';
+      note.innerHTML='<b>ปฏิบัพ'+(sel.n===0?'กลาง':' ลำดับที่ '+sel.n)+':</b> Δ = '+sel.n+'λ (จำนวนเต็มเท่าของ λ) คลื่นเสริมกัน แอมพลิจูดมากที่สุด';}
+    else{oT.textContent='บัพ';oT.style.color='#E8654A';
+      note.innerHTML='<b>บัพ ลำดับที่ '+sel.n+':</b> Δ = ('+sel.n+'−½)λ = '+(sel.n-0.5)+'λ (ครึ่งจำนวนคี่ของ λ) คลื่นหักล้างกัน ตัวกลางแทบไม่สั่น';}
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ============ 8. CALC — ความต่างระยะทาง (ไม่มีมุม) ============ */
+let calcKind='anti';
+function toggleCalcKind(){
+  calcKind=calcKind==='anti'?'node':'anti';
+  const btn=document.getElementById('chCalcKind');
+  btn.textContent=calcKind==='anti'?'แสดง: ปฏิบัพ (Δ=nλ)':'แสดง: บัพ (Δ=(n−½)λ)';
+  btn.classList.toggle('on',true);
+}
+(function(){const cv=document.getElementById('cCalc');let t=0;
+  const rN=document.getElementById('rCalcN'), vSel=document.getElementById('vCalcSel');
+  const oPd=document.getElementById('oCalcPd'), oType=document.getElementById('oCalcType');
+  const LAM=34;
+  function draw(){const g=fit(cv);const{ctx,w,h}=g;
+    if(w<20||h<20){requestAnimationFrame(draw);return;}   // ข้ามเมื่อสไลด์ซ่อน
+    ctx.clearRect(0,0,w,h);
+    t+=0.006;
+    const cx=w*0.14, cy=h*0.5, d=LAM*3.4;
+    const s1={x:cx,y:cy-d/2}, s2={x:cx,y:cy+d/2};
+    // ลายแทรกสอด (นิ่ง)
+    const step=5;
+    for(let x=0;x<w;x+=step){for(let y=0;y<h;y+=step){
+      const d1=Math.hypot(x-s1.x,y-s1.y), d2=Math.hypot(x-s2.x,y-s2.y);
+      const v=Math.sin(2*Math.PI*d1/LAM-t)+Math.sin(2*Math.PI*d2/LAM-t);
+      const a=(v+2)/4;
+      ctx.fillStyle='rgba('+Math.round(18+a*80)+','+Math.round(58+a*120)+','+Math.round(100+a*95)+','+(0.5+a*0.4).toFixed(2)+')';
+      ctx.fillRect(x,y,step,step);
+    }}
+    // แนวบัพ/ปฏิบัพ
+    for(let x=Math.ceil(cx);x<w;x+=3){for(let y=0;y<h;y+=3){
+      const pd=Math.abs((Math.hypot(x-s1.x,y-s1.y)-Math.hypot(x-s2.x,y-s2.y))/LAM);
+      const nI=Math.abs(pd-Math.round(pd)), nH=Math.abs(pd-(Math.round(pd-0.5)+0.5));
+      if(nI<0.028){ctx.fillStyle='rgba(244,183,64,.5)';ctx.fillRect(x,y,2.2,2.2);}
+      else if(nH<0.028){ctx.fillStyle='rgba(232,101,74,.45)';ctx.fillRect(x,y,2.2,2.2);}
+    }}
+    // แนวที่เลือก (บัพไม่มี n=0 จึงใช้อย่างน้อย 1)
+    const n=calcKind==='node'?Math.max(1,+rN.value):+rN.value;
+    const target=(calcKind==='anti'?n:(n-0.5))*LAM;
+    // หาจุด P บนแนว: สแกนหลายระยะ x หาจุดที่ตรง target ที่สุดและอยู่ในกรอบ
+    let best=null;
+    for(let px=w*0.55;px<=w*0.9;px+=w*0.05){
+      for(let y=8;y<h-8;y+=1){
+        const d1=Math.hypot(px-s1.x,y-s1.y), d2=Math.hypot(px-s2.x,y-s2.y);
+        const diff=Math.abs(d1-d2),sc=Math.abs(diff-target);
+        if(!best||sc<best.sc)best={x:px,y,sc,d1,d2};
+      }
+    }
+    const valid=(calcKind==='anti'? n*LAM<=d : (n-0.5)*LAM<=d) && best.sc<6;
+    const P={x:best.x,y:best.y};
+    // เส้น S1P, S2P
+    if(valid){
+      ctx.strokeStyle='#7FD8E8';ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(s1.x,s1.y);ctx.lineTo(P.x,P.y);ctx.stroke();
+      ctx.strokeStyle='#F4B740';ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(s2.x,s2.y);ctx.lineTo(P.x,P.y);ctx.stroke();
+    }
+    // แหล่งกำเนิด
+    for(const s of [s1,s2]){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.x,s.y,6,0,7);ctx.fill();}
+    ctx.fillStyle='#fff';ctx.font='700 '+Math.max(13,h*0.05)+"px Kanit";ctx.textAlign='left';
+    ctx.fillText('S₁',s1.x-28,s1.y+5);ctx.fillText('S₂',s2.x-28,s2.y+6);
+    // จุด P + ป้าย
+    if(valid){
+      const col=calcKind==='anti'?'#F4B740':'#E8654A';
+      ctx.fillStyle=col;ctx.beginPath();ctx.arc(P.x,P.y,8,0,7);ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
+      ctx.font='700 '+Math.max(12,h*0.042)+"px Prompt";ctx.textAlign='center';
+      const tag=calcKind==='anti'?(n===0?'ปฏิบัพกลาง':'ปฏิบัพ n='+n):'บัพ n='+n;
+      const tw=ctx.measureText(tag).width;
+      ctx.fillStyle='rgba(7,20,40,.75)';ctx.fillRect(P.x-tw/2-8,P.y-Math.max(30,h*0.1),tw+16,Math.max(22,h*0.07));
+      ctx.fillStyle=col;ctx.fillText(tag,P.x,P.y-Math.max(14,h*0.05));
+      ctx.textAlign='left';
+      // อัปเดตค่า
+      const pd=Math.abs(best.d1-best.d2)/LAM;
+      oPd.textContent=pd.toFixed(1)+'λ';
+    }else{
+      oPd.textContent='—';
+    }
+    // อัปเดตป้าย
+    vSel.textContent=(calcKind==='anti'?'ปฏิบัพ n=':'บัพ n=')+n;
+    oType.textContent=calcKind==='anti'?'ปฏิบัพ':'บัพ';
+    oType.style.color=calcKind==='anti'?'#F4B740':'#E8654A';
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ============ 9. FULL SIM (slide 9) ============ */
+let fullNodes=false, fullField=false;
+function toggleFullNodes(){fullNodes=!fullNodes;document.getElementById('chFullNodes').classList.toggle('on',fullNodes);}
+function toggleFullField(){fullField=!fullField;document.getElementById('chFullField').classList.toggle('on',fullField);}
+(function(){const cv=document.getElementById('cFull');let t=0;
+  const rLam=document.getElementById('rFullLam'), rD=document.getElementById('rFullD');
+  const vLam=document.getElementById('vFullLam'), vD=document.getElementById('vFullD');
+  const oA=document.getElementById('oFullAnti'), oR=document.getElementById('oFullRatio');
+  function upd(){
+    const lam=+rLam.value, dR=+rD.value/10;
+    vLam.textContent=lam;vD.textContent=dR.toFixed(1);
+    oR.textContent=dR.toFixed(1);
+    oA.textContent=(2*Math.floor(dR)+1);   // จำนวนแนวปฏิบัพ = 2⌊d/λ⌋+1
+  }
+  rLam.addEventListener('input',upd);rD.addEventListener('input',upd);
+  function draw(){const{ctx,w,h}=fit(cv);if(w<20||h<20){requestAnimationFrame(draw);return;}ctx.clearRect(0,0,w,h);
+    if(!paused.full)t+=0.02;
+    const lam=+rLam.value, dR=+rD.value/10;
+    const d=dR*lam, cx=w*0.5, cy=h*0.5;
+    const s1={x:cx,y:cy-d/2}, s2={x:cx,y:cy+d/2};
+    const step=fullField?4:5;
+    for(let x=0;x<w;x+=step){for(let y=0;y<h;y+=step){
+      const d1=Math.hypot(x-s1.x,y-s1.y), d2=Math.hypot(x-s2.x,y-s2.y);
+      if(fullField){
+        // โหมดความเข้ม: |cos| ยกกำลังสอง
+        const I=Math.pow(Math.cos(Math.PI*(d1-d2)/lam),2);
+        ctx.fillStyle='rgba('+Math.round(30+I*130)+','+Math.round(80+I*130)+','+Math.round(120+I*100)+','+(0.4+I*0.6).toFixed(2)+')';
+      }else{
+        const v=Math.sin(2*Math.PI*d1/lam-t*3)+Math.sin(2*Math.PI*d2/lam-t*3);
+        const a=(v+2)/4;
+        ctx.fillStyle='rgba('+Math.round(20+a*90)+','+Math.round(60+a*130)+','+Math.round(110+a*100)+','+(0.55+a*0.45).toFixed(2)+')';
+      }
+      ctx.fillRect(x,y,step,step);
+    }}
+    if(fullNodes){
+      for(let x=0;x<w;x+=3){for(let y=0;y<h;y+=3){
+        const pd=(Math.hypot(x-s1.x,y-s1.y)-Math.hypot(x-s2.x,y-s2.y))/lam;
+        const near=Math.abs(pd-Math.round(pd)), nearHalf=Math.abs(pd-(Math.round(pd-0.5)+0.5));
+        if(near<0.03){ctx.fillStyle='rgba(244,183,64,.85)';ctx.fillRect(x,y,2.2,2.2);}
+        else if(nearHalf<0.03){ctx.fillStyle='rgba(232,101,74,.8)';ctx.fillRect(x,y,2.2,2.2);}
+      }}
+    }
+    for(const s of [s1,s2]){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.x,s.y,5,0,7);ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(s.x,s.y,9,0,7);ctx.stroke();}
+    requestAnimationFrame(draw);
+  }
+  draw();upd();
+})();
+
+/* ============ 10. โจทย์ตัวอย่าง ============ */
+/* เศษส่วนแบบ HTML (เหนือ/ใต้บรรทัด) */
+function fr(nu,de){return '<span class="frac"><span class="nu">'+nu+'</span><span class="de">'+de+'</span></span>';}
+
+const EXAMPLES=[
+ { kind:'พิจารณาชนิดของจุด',
+   q:'แหล่งกำเนิดอาพันธ์ S₁ และ S₂ มีเฟสตรงกัน ให้กำเนิดคลื่นความยาวคลื่น 1.0 cm จุด P อยู่ห่างจาก S₁ เป็นระยะ 30 cm และห่างจาก S₂ เป็นระยะ 33 cm จงพิจารณาว่าจุด P เป็นบัพหรือปฏิบัพ',
+   given:[['S₁P','30 cm'],['S₂P','33 cm'],['λ','1.0 cm']],
+   sol:[
+     {lbl:'หาความต่างระยะทาง',eq:'Δ<span class="op">=</span>|S₁P<span class="op">−</span>S₂P|<span class="op">=</span>|30<span class="op">−</span>33|<span class="op">=</span>3 cm'},
+     {lbl:'เทียบกับความยาวคลื่น',eq:'Δ<span class="op">=</span>'+fr('3 cm','1.0 cm')+'λ<span class="op">=</span>3λ'},
+     {lbl:'เนื่องจาก Δ เป็นจำนวนเต็มเท่าของ λ (Δ = nλ, n = 3)',eq:'∴ จุด P เป็น <b style="color:#F4B740">ปฏิบัพ</b>'}
+   ],
+   final:'จุด P เป็นปฏิบัพ ลำดับที่ 3', flcap:'Δ = 3λ = จำนวนเต็มเท่าของ λ → เสริมกัน' },
+
+ { kind:'พิจารณาชนิดของจุด',
+   q:'แหล่งกำเนิดอาพันธ์เฟสตรงกัน ให้กำเนิดคลื่นความยาวคลื่น 1.0 cm จุด Q อยู่ห่างจาก S₁ เป็นระยะ 25 cm และห่างจาก S₂ เป็นระยะ 27.5 cm จงพิจารณาว่าจุด Q เป็นบัพหรือปฏิบัพ',
+   given:[['S₁Q','25 cm'],['S₂Q','27.5 cm'],['λ','1.0 cm']],
+   sol:[
+     {lbl:'หาความต่างระยะทาง',eq:'Δ<span class="op">=</span>|S₁Q<span class="op">−</span>S₂Q|<span class="op">=</span>|25<span class="op">−</span>27.5|<span class="op">=</span>2.5 cm'},
+     {lbl:'เทียบกับความยาวคลื่น',eq:'Δ<span class="op">=</span>'+fr('2.5 cm','1.0 cm')+'λ<span class="op">=</span>2.5λ<span class="op">=</span>(3<span class="op">−</span>½)λ'},
+     {lbl:'เนื่องจาก Δ เป็นครึ่งจำนวนคี่ของ λ [Δ = (n−½)λ, n = 3]',eq:'∴ จุด Q เป็น <b style="color:#E8654A">บัพ</b>'}
+   ],
+   final:'จุด Q เป็นบัพ ลำดับที่ 3', flcap:'Δ = 2.5λ = (3−½)λ = ครึ่งจำนวนคี่ของ λ → หักล้างกัน' },
+
+ { kind:'หาความยาวคลื่น',
+   q:'จุด P เป็นปฏิบัพลำดับที่ 3 พอดี โดยอยู่ห่างจากแหล่งกำเนิด S₁ เป็นระยะ 40 cm และห่างจาก S₂ เป็นระยะ 46 cm จงหาความยาวคลื่นของคลื่นนี้',
+   given:[['S₁P','40 cm'],['S₂P','46 cm'],['ลำดับปฏิบัพ n','3']],
+   sol:[
+     {lbl:'ปฏิบัพ ใช้สมการ',eq:'Δ<span class="op">=</span>nλ'},
+     {lbl:'หาความต่างระยะทาง',eq:'|S₁P<span class="op">−</span>S₂P|<span class="op">=</span>nλ'},
+     {lbl:'แทนค่า',eq:'|40<span class="op">−</span>46|<span class="op">=</span>3λ'},
+     {lbl:'',eq:'6<span class="op">=</span>3λ'},
+     {lbl:'',eq:'λ<span class="op">=</span>'+fr('6 cm','3')+'<span class="op">=</span>2.0 cm'}
+   ],
+   final:'λ = 2.0 cm', flcap:'ปฏิบัพลำดับที่ 3 : Δ = 3λ = 6 cm' },
+
+ { kind:'หาความยาวคลื่น',
+   q:'จุด R เป็นบัพลำดับที่ 2 โดยอยู่ห่างจากแหล่งกำเนิด S₁ เป็นระยะ 21 cm และห่างจาก S₂ เป็นระยะ 24 cm จงหาความยาวคลื่นของคลื่นนี้',
+   given:[['S₁R','21 cm'],['S₂R','24 cm'],['ลำดับบัพ n','2']],
+   sol:[
+     {lbl:'บัพ ใช้สมการ',eq:'Δ<span class="op">=</span>(n<span class="op">−</span>½)λ'},
+     {lbl:'หาความต่างระยะทาง',eq:'|S₁R<span class="op">−</span>S₂R|<span class="op">=</span>(n<span class="op">−</span>½)λ'},
+     {lbl:'แทนค่า n = 2',eq:'|21<span class="op">−</span>24|<span class="op">=</span>(2<span class="op">−</span>½)λ'},
+     {lbl:'',eq:'3<span class="op">=</span>'+fr('3','2')+'λ'},
+     {lbl:'',eq:'λ<span class="op">=</span>3<span class="op">×</span>'+fr('2','3')+'<span class="op">=</span>2.0 cm'}
+   ],
+   final:'λ = 2.0 cm', flcap:'บัพลำดับที่ 2 : Δ = (2−½)λ = 1.5λ = 3 cm' },
+
+ { kind:'หาลำดับของจุด',
+   q:'แหล่งกำเนิดอาพันธ์เฟสตรงกัน ให้กำเนิดคลื่นความยาวคลื่น 2.0 cm จุด P มีความต่างระยะทางจากแหล่งกำเนิดทั้งสองเท่ากับ 8.0 cm จงหาว่าจุด P เป็นปฏิบัพลำดับที่เท่าใด',
+   given:[['Δ','8.0 cm'],['λ','2.0 cm']],
+   sol:[
+     {lbl:'ปฏิบัพ ใช้สมการ',eq:'Δ<span class="op">=</span>nλ'},
+     {lbl:'หาลำดับ n',eq:'n<span class="op">=</span>'+fr('Δ','λ')+'<span class="op">=</span>'+fr('8.0 cm','2.0 cm')},
+     {lbl:'',eq:'n<span class="op">=</span>4'}
+   ],
+   final:'จุด P เป็นปฏิบัพ ลำดับที่ 4', flcap:'Δ = 8 cm = 4λ → ปฏิบัพลำดับที่ 4' },
+
+ { kind:'นับจำนวนแนว',
+   q:'แหล่งกำเนิดอาพันธ์ S₁ และ S₂ ห่างกัน 9.0 cm ให้กำเนิดคลื่นความยาวคลื่น 2.0 cm จงหาว่าเกิดแนวปฏิบัพทั้งหมดกี่แนว (รวมแนวปฏิบัพกลาง)',
+   given:[['d','9.0 cm'],['λ','2.0 cm']],
+   sol:[
+     {lbl:'แนวปฏิบัพเกิดเมื่อ Δ = nλ และ Δ ต้องไม่เกินระยะ d',eq:'nλ<span class="op">≤</span>d'},
+     {lbl:'หาค่า n สูงสุด',eq:'n<span class="op">≤</span>'+fr('d','λ')+'<span class="op">=</span>'+fr('9.0 cm','2.0 cm')+'<span class="op">=</span>4.5'},
+     {lbl:'n เป็นจำนวนเต็ม จึงได้',eq:'n<span class="op">=</span>0, 1, 2, 3, 4'},
+     {lbl:'นับทั้งสองข้างของแนวกลาง',eq:'จำนวนแนว<span class="op">=</span>(2<span class="op">×</span>4)<span class="op">+</span>1<span class="op">=</span>9'}
+   ],
+   final:'เกิดแนวปฏิบัพทั้งหมด 9 แนว', flcap:'n = 0,±1,±2,±3,±4 → รวมแนวกลาง = 9 แนว' }
+];
+(function(){
+  EXAMPLES.forEach((ex,i)=>{
+    const sec=document.getElementById('ex'+(i+1));
+    let givenHtml=ex.given.map(g=>'<div class="g"><span class="lb">'+g[0]+'</span>= '+g[1]+'</div>').join('');
+    let solHtml=ex.sol.map(s=>'<div class="sol-step">'+(s.lbl?'<div class="lbl">'+s.lbl+'</div>':'')+'<div class="sol-eq">'+s.eq+'</div></div>').join('');
+    sec.innerHTML=
+      '<div class="eyebrow">ฝึกทำ · โจทย์ข้อ '+(i+1)+' จาก 6</div>'+
+      '<div class="ex-head"><div class="ex-badge">'+(i+1)+'<span class="sm">/6</span></div>'+
+        '<span class="ex-kind find">'+ex.kind+'</span></div>'+
+      '<div class="ex-body">'+
+        '<div class="ex-qside">'+
+          '<div class="ex-question">'+ex.q+'</div>'+
+          '<div class="ex-given">'+givenHtml+'</div>'+
+          '<button class="ex-btn" id="exBtn'+i+'">📖 ดูเฉลย</button>'+
+        '</div>'+
+        '<div class="ex-answer" id="exAns'+i+'">'+
+          '<div class="ah">✓ วิธีทำ</div>'+solHtml+
+          '<div class="sol-final"><div class="fl">'+ex.final+'</div><div class="flcap">'+ex.flcap+'</div></div>'+
+        '</div>'+
+      '</div>';
+    const btn=sec.querySelector('#exBtn'+i), ans=sec.querySelector('#exAns'+i);
+    btn.onclick=()=>{
+      ans.classList.toggle('show');
+      btn.textContent=ans.classList.contains('show')?'🔄 ซ่อนเฉลย':'📖 ดูเฉลย';
+    };
+  });
+})();
+</script>
+</body>
+</html>
